@@ -9,9 +9,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@500;700&display=swap');
 
         :root { --bg:#050505; --panel:#111; --gold:#D4AF37; --text:#eee; --border:1px solid #333; }
-        * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; touch-action:none; }
         
-        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+        /* GLOBAL RESET - BUT ALLOW SCROLLING BY DEFAULT */
+        * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+        
+        /* PREVENT SCROLL ONLY ON BODY TO STOP BOUNCE */
+        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; touch-action:none; }
 
         /* HEADER */
         header { height:60px; background:#0c0c0c; border-bottom:var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 20px; z-index:100; }
@@ -31,15 +34,15 @@
         .nav-btn { background:#1a1a1a; border:1px solid #333; color:#888; width:65px; height:36px; border-radius:4px; cursor:pointer; transition:0.2s; font-weight:700; font-size:18px; display:grid; place-items:center; }
         .nav-btn:hover { background:#222; color:#fff; border-color:#555; } .nav-btn:active { background:var(--gold); color:#000; }
 
-        /* CHAIN STRIP */
-        .chain-strip { height:75px; background:#141414; border-bottom:var(--border); display:flex; align-items:center; padding:0 25px; gap:8px; overflow-x:auto; }
+        /* CHAIN STRIP - ALLOW HORIZONTAL SCROLL */
+        .chain-strip { height:75px; background:#141414; border-bottom:var(--border); display:flex; align-items:center; padding:0 25px; gap:8px; overflow-x:auto; touch-action: pan-x; }
         .chain-strip::-webkit-scrollbar { display:none; }
         .pedal { min-width:62px; height:42px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:4px; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:700; color:#666; cursor:pointer; transition:0.1s; }
         .pedal.selected { border:1px solid #fff; background:#333; color:#fff; transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.5); }
         .pedal.on { border-color:rgba(212, 175, 55, 0.5); color:var(--gold); background:linear-gradient(180deg, #221e0f, #111); }
 
-        /* KNOB STAGE */
-        .stage { flex:1; background:#0a0a0a; padding:30px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; }
+        /* KNOB STAGE - LOCK SCROLLING HERE TO ALLOW DRAGGING */
+        .stage { flex:1; background:#0a0a0a; padding:30px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; touch-action: none; }
         .model-list { margin-bottom:30px; padding:10px 20px; background:#111; color:var(--gold); border:1px solid #333; border-radius:6px; font-family:'JetBrains Mono'; font-size:13px; outline:none; cursor:pointer; min-width: 250px; text-align:center; }
         .knob-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(85px, 1fr)); gap:25px; width:100%; max-width:900px; }
         .knob-wrapper { display:flex; flex-direction:column; align-items:center; gap:10px; }
@@ -64,7 +67,13 @@
         .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #222; }
         .modal-title { color:#fff; font-weight:900; letter-spacing:1px; margin:0; }
         
-        .slot-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex:1; overflow-y:auto; padding-right:5px; }
+        /* CRITICAL: ENABLE VERTICAL SCROLLING HERE */
+        .slot-grid { 
+            display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex:1; 
+            overflow-y:auto; padding-right:5px;
+            touch-action: pan-y; /* FIX: Allows scrolling */
+        }
+        
         .slot { background:#1a1a1a; padding:15px; text-align:center; border:1px solid #2a2a2a; color:#666; font-family:'JetBrains Mono'; font-size:11px; cursor:pointer; display:flex; flex-direction:column; gap:4px; border-radius:4px; }
         .slot strong { color:#888; font-size:13px; }
         .slot:hover { background:#252525; color:#fff; border-color:#666; }
@@ -73,6 +82,66 @@
         .btn-scan { background:var(--gold); color:#000; border:none; padding:8px 20px; font-weight:800; cursor:pointer; font-size:11px; border-radius:4px; }
         .btn-close { background:transparent; border:1px solid #444; color:#fff; padding:8px 20px; font-weight:700; cursor:pointer; font-size:11px; border-radius:4px; }
     </style>
+</head>
+<body>
+
+    <div id="modal" class="overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">PATCH MANAGER</h3>
+                <button class="btn-scan" onclick="scanNames()">SCAN ALL NAMES</button>
+            </div>
+            <div class="slot-grid" id="grid"></div>
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn-close" onclick="closeModal()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo">NUX <span>v5.0.2</span></div>
+        <div class="status-led" id="led"></div>
+    </header>
+
+    <div class="rig-section">
+        <div class="lcd-screen">
+            <div class="lcd-header"><span>USB: <b id="usb-state">--</b></span><span>BPM 120</span></div>
+            <div class="lcd-body">
+                <div class="patch-id" id="lcd-num">--</div>
+                <div class="patch-lbl" id="lcd-name">OFFLINE</div>
+            </div>
+        </div>
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="nav(-1)">◀</button>
+            <button class="nav-btn" onclick="nav(1)">▶</button>
+        </div>
+    </div>
+
+    <div class="chain-strip">
+        <div class="pedal" id="b-WAH" onclick="setBlock('WAH')">WAH</div>
+        <div class="pedal" id="b-CMP" onclick="setBlock('CMP')">CMP</div>
+        <div class="pedal" id="b-EFX" onclick="setBlock('EFX')">EFX</div>
+        <div class="pedal selected" id="b-AMP" onclick="setBlock('AMP')">AMP</div>
+        <div class="pedal" id="b-NR"  onclick="setBlock('NR')">GATE</div>
+        <div class="pedal" id="b-EQ"  onclick="setBlock('EQ')">EQ</div>
+        <div class="pedal" id="b-MOD" onclick="setBlock('MOD')">MOD</div>
+        <div class="pedal" id="b-DLY" onclick="setBlock('DLY')">DLY</div>
+        <div class="pedal" id="b-RVB" onclick="setBlock('RVB')">RVB</div>
+        <div class="pedal" id="b-IR"  onclick="setBlock('IR')">IR</div>
+    </div>
+
+    <div class="stage">
+        <select class="model-list" id="models" onchange="drawKnobs()"></select>
+        <div class="knob-grid" id="knobs"></div>
+    </div>
+
+    <footer>
+        <button class="btn" onclick="openModal()">Patch Manager</button>
+        <button class="btn" onclick="doExport()">Export Patch</button>
+        <button class="btn btn-green" id="btn-connect" onclick="initUSB()">CONNECT USB</button>
+    </footer>
+
+    <input type="file" id="fileInput" hidden onchange="fileHandler(this)">
 
     <script>
         // ===========================================
@@ -94,27 +163,15 @@
                 'Red Fuzz':[{n:'FUZZ',cc:20},{n:'LVL',cc:21}], 'Touch Wah':[{n:'SENS',cc:20},{n:'RES',cc:21},{n:'DEC',cc:22}]
             },
             'AMP': { 
-                // CLEAN & CRUNCH
                 'Jazz Clean':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
                 'Deluxe Rvb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
                 'Bassman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Twin Rvb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
-                'HiWatt':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'AC30 Top':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
-                'Matchless':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
-                'Vibro King':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
-                'Budda':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'CUT',cc:35}],
-                'Super Rvb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
-                
-                // HIGH GAIN
-                'Plexi 100':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Brit 800':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Plx 45':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Brit 2000':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Gold 100':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Soldano':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
                 'Recto Dual':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
                 'Diezel VH4':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}],
+                'AC30 Top':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
+                'Plexi 100':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Brit 800':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Soldano':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
                 'Friedman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
                 'Uber':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
                 'Diezel Herbert':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}],
@@ -122,8 +179,6 @@
                 'Vibroverb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
                 'Dr. Z':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
                 'Dual Rect':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-
-                // BASS
                 'AGL':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
                 'MLD':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
                 'Starlift':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}]
@@ -155,8 +210,8 @@
         let scanMode = false;
         let scanIndex = 0;
 
-        // SAFE BOOT: Listen for window load, then start.
-        window.addEventListener('load', () => {
+        // Auto-run when DOM is ready
+        window.addEventListener('DOMContentLoaded', () => {
             console.log("System Ready");
             setBlock('AMP');
             makeGrid();
@@ -218,8 +273,9 @@
             e.target.onpointermove = (ev) => {
                 if(!isDrag) return;
                 let diff = dy - ev.clientY;
-                dval = Math.max(0, Math.min(100, dval + diff)); 
+                dval = Math.max(0, Math.min(100, dval + diff)); // 0-100 UI Limit
                 
+                // Draw UI
                 let pct = dval/100;
                 let off = 200 - (pct*200);
                 let ang = -135 + (pct*270);
@@ -232,6 +288,7 @@
                 if(ptr) ptr.setAttribute('transform', `rotate(${ang} 50 50)`);
                 if(txt) txt.innerText = dval;
                 
+                // Send MIDI (Scale 0-100 -> 0-127)
                 if(midiOut) midiOut.send([0xB0, dcc, Math.floor(dval * 1.27)]);
                 dy = ev.clientY;
             };
@@ -353,10 +410,8 @@
 
         function doExport() {
             if(!midiOut) return alert("Connect First");
-            if(confirm("Download?")) {
-                waitingForExport = true;
-                askDump();
-            }
+            alert("Capturing Data... (Check Console for Dump)");
+            askDump();
         }
 
         function saveBlob(d, n) {
@@ -384,66 +439,5 @@
         }
 
     </script>
-</head>
-<body>
-
-    <div id="modal" class="overlay">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3 class="modal-title">PATCH MANAGER</h3>
-                <button class="btn-scan" onclick="scanNames()">SCAN ALL NAMES</button>
-            </div>
-            <div class="slot-grid" id="grid"></div>
-            <div style="margin-top:20px; text-align:right;">
-                <button class="btn-close" onclick="closeModal()">CLOSE</button>
-            </div>
-        </div>
-    </div>
-
-    <header>
-        <div class="logo">NUX <span>v5.0.2</span></div>
-        <div class="status-led" id="led"></div>
-    </header>
-
-    <div class="rig-section">
-        <div class="lcd-screen">
-            <div class="lcd-header"><span>USB: <b id="usb-state">--</b></span><span>BPM 120</span></div>
-            <div class="lcd-body">
-                <div class="patch-id" id="lcd-num">--</div>
-                <div class="patch-lbl" id="lcd-name">OFFLINE</div>
-            </div>
-        </div>
-        <div class="nav-bar">
-            <button class="nav-btn" onclick="nav(-1)">◀</button>
-            <button class="nav-btn" onclick="nav(1)">▶</button>
-        </div>
-    </div>
-
-    <div class="chain-strip">
-        <div class="pedal" id="b-WAH" onclick="setBlock('WAH')">WAH</div>
-        <div class="pedal" id="b-CMP" onclick="setBlock('CMP')">CMP</div>
-        <div class="pedal" id="b-EFX" onclick="setBlock('EFX')">EFX</div>
-        <div class="pedal selected" id="b-AMP" onclick="setBlock('AMP')">AMP</div>
-        <div class="pedal" id="b-NR"  onclick="setBlock('NR')">GATE</div>
-        <div class="pedal" id="b-EQ"  onclick="setBlock('EQ')">EQ</div>
-        <div class="pedal" id="b-MOD" onclick="setBlock('MOD')">MOD</div>
-        <div class="pedal" id="b-DLY" onclick="setBlock('DLY')">DLY</div>
-        <div class="pedal" id="b-RVB" onclick="setBlock('RVB')">RVB</div>
-        <div class="pedal" id="b-IR"  onclick="setBlock('IR')">IR</div>
-    </div>
-
-    <div class="stage">
-        <select class="model-list" id="models" onchange="drawKnobs()"></select>
-        <div class="knob-grid" id="knobs"></div>
-    </div>
-
-    <footer>
-        <button class="btn" onclick="openModal()">Patch Manager</button>
-        <button class="btn" onclick="doExport()">Export Patch</button>
-        <button class="btn btn-green" onclick="initUSB()">CONNECT USB</button>
-    </footer>
-
-    <input type="file" id="fileInput" hidden onchange="fileHandler(this)">
-
 </body>
 </html>
