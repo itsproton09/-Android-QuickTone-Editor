@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX MG-30 BOSS V21</title>
+    <title>NUX MG-30 FINAL V32</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
         
@@ -27,7 +27,6 @@
         }
         .p-num { font-family:'JetBrains Mono'; font-size:2.5rem; color:var(--gold); line-height:1; z-index:2; text-shadow:0 0 15px rgba(212,175,55,0.2); }
         .p-name { font-family:'Inter'; font-size:0.9rem; color:#fff; font-weight:700; text-transform:uppercase; z-index:2; letter-spacing:1px; margin-top:4px; }
-        
         .lcd-msg { position:absolute; top:5px; right:5px; background:var(--danger); color:#fff; padding:2px 5px; font-size:9px; font-weight:900; display:none; border-radius:3px; }
 
         .nav-bar { display:flex; gap:10px; width:260px; justify-content:space-between; margin-top:8px; }
@@ -41,9 +40,13 @@
             display:flex; flex-direction:column; justify-content:center; align-items:center; 
             font-size:9px; font-weight:800; color:#555; cursor:pointer; position:relative; transition:0.1s;
         }
+        /* ACTIVE STATE (GREEN) */
         .block.active { background:linear-gradient(180deg, #333, #222); border-color:#444; color:#ccc; }
         .block.active .b-led { background:var(--accent); box-shadow:0 0 5px var(--accent); opacity:1; }
+        
+        /* EDITING STATE (GOLD BORDER) */
         .block.editing { border-color:var(--gold); color:var(--gold); transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.5); }
+        
         .b-led { width:5px; height:5px; background:#000; border-radius:50%; margin-bottom:3px; border:1px solid #111; opacity:0.3; }
 
         /* STAGE */
@@ -63,6 +66,9 @@
         .k-num { font-family:'JetBrains Mono'; font-size:12px; font-weight:700; color:rgba(255,255,255,0.9); margin-bottom:3px; }
         .k-lbl { font-size:9px; font-weight:900; color:rgba(255,255,255,0.6); text-transform:uppercase; text-align:center; }
 
+        /* DEBUG FOOTER */
+        .rx-log { font-family:'JetBrains Mono'; font-size:9px; color:#555; margin-right:10px; }
+
         footer { height:50px; background:#080808; border-top:1px solid #333; display:flex; gap:10px; padding:0 15px; align-items:center; }
         .btn-act { flex:1; height:34px; background:#1a1a1a; border:1px solid #333; color:#aaa; font-size:10px; font-weight:900; border-radius:4px; cursor:pointer; }
         .btn-green { color:var(--accent); background:rgba(0,230,118,0.05); border-color:rgba(0,230,118,0.2); }
@@ -71,7 +77,7 @@
 <body>
 
     <header>
-        <div class="logo">NUX <span>BOSS V21</span></div>
+        <div class="logo">NUX <span>PRO V32</span></div>
         <div class="status" id="led"></div>
     </header>
 
@@ -92,12 +98,13 @@
 
     <div class="stage">
         <div class="controls-header">
-            <select id="modelSel" onchange="setModel()"></select>
+            <select id="modelSel" onchange="manualModelChange()"></select>
         </div>
         <div class="chassis" id="chassisUI"></div>
     </div>
 
     <footer>
+        <span class="rx-log" id="rxLog">RX: --</span>
         <button class="btn-act btn-green" onclick="init()">LINK HARDWARE</button>
         <button class="btn-act" onclick="document.getElementById('imp').click()">IMPORT</button>
         <button class="btn-act" onclick="exportDat()">EXPORT</button>
@@ -119,17 +126,26 @@
         'IR': { type:'pedal', models:{'Cab':['LO','HI','LVL'] }}
     };
 
+    // --- 2. LOGIC MAP ---
     const BLOCKS = [
-        { id:'WAH', cc:9,  sel:1,  start:10 }, { id:'CMP', cc:14, sel:2,  start:15 },
-        { id:'GATE',cc:39, sel:3,  start:40 }, { id:'EFX', cc:19, sel:4,  start:20 },
-        { id:'AMP', cc:29, sel:5,  start:30 }, { id:'EQ',  cc:44, sel:6,  start:45 },
-        { id:'MOD', cc:59, sel:7,  start:60 }, { id:'DLY', cc:69, sel:8,  start:70 },
-        { id:'RVB', cc:79, sel:9,  start:80 }, { id:'IR',  cc:89, sel:10, start:90 }
+        { id:'WAH', cc:9,  sel:1,  start:10, b_offset: 12 }, 
+        { id:'CMP', cc:14, sel:2,  start:15, b_offset: 20 },
+        { id:'GATE',cc:39, sel:3,  start:40, b_offset: 60 }, 
+        { id:'EFX', cc:19, sel:4,  start:20, b_offset: 24 },
+        { id:'AMP', cc:29, sel:5,  start:30, b_offset: 32 }, 
+        { id:'EQ',  cc:44, sel:6,  start:45, b_offset: 40 },
+        { id:'MOD', cc:59, sel:7,  start:60, b_offset: 48 }, 
+        { id:'DLY', cc:69, sel:8,  start:70, b_offset: 56 },
+        { id:'RVB', cc:79, sel:9,  start:80, b_offset: 64 }, 
+        { id:'IR',  cc:89, sel:10, start:90, b_offset: 72 }
     ];
 
-    let midiOut=null, patchId=0, activeBlk='AMP', blkState={}, knobVal={};
+    const NUX_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
-    // --- 2. INIT ---
+    let midiOut=null, patchId=0, activeBlk='AMP';
+    let blkState={}, knobVal={}, currentModels={};
+
+    // --- 3. INIT ---
     function init() {
         if(!navigator.requestMIDIAccess) return;
         navigator.requestMIDIAccess({sysex:true}).then(acc => {
@@ -139,13 +155,11 @@
                 document.getElementById('led').className='status on';
                 document.getElementById('offMsg').style.display='none';
                 
-                // BURST: Name Dump + Status Scan
                 midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
 
                 const ins = Array.from(acc.inputs.values());
                 const inp = ins.find(i => i.name.includes("MG-30") || i.name.includes("NUX")) || ins[0];
                 if(inp) inp.onmidimessage = handle;
-                
                 acc.onstatechange = e => { if(e.port.state==='disconnected') setOffline(); };
             } else { setOffline(); }
         });
@@ -157,41 +171,60 @@
         document.getElementById('lcdName').innerText="DISCONNECTED";
     }
 
-    // --- 3. HANDLER ---
+    // --- 4. OMNI-CHANNEL HANDLER ---
     function handle(e) {
         const [s, d1, d2] = e.data;
+        const status = s & 0xF0; // Strip channel info
 
-        if((s & 0xF0) === 0xB0) {
-            const blk = BLOCKS.find(b => b.cc === d1);
-            if(blk) { blkState[blk.id] = d2 > 63; renderChain(); }
-            else { knobVal[d1] = d2; updateKnobUI(d1, d2); }
+        // DEBUG: LOG EVERYTHING
+        if(status === 0xB0) {
+            document.getElementById('rxLog').innerText = `RX: CC ${d1} -> ${d2}`;
         }
 
-        if((s & 0xF0) === 0xC0) {
+        // A. KNOB / BYPASS (LISTEN TO ALL CHANNELS 0xB0 - 0xBF)
+        if(status === 0xB0) {
+            const blk = BLOCKS.find(b => b.cc === d1);
+            if(blk) { 
+                // V32 FIX: UPDATE STATE & RENDER
+                blkState[blk.id] = d2 > 63; // 127=ON
+                renderChain(); 
+            } else { 
+                knobVal[d1] = d2; 
+                updateKnobUI(d1, d2); 
+            }
+        }
+
+        // B. PATCH CHANGE
+        if(status === 0xC0) {
             patchId = d1;
-            BLOCKS.forEach(b => blkState[b.id] = false); // Reset States
+            BLOCKS.forEach(b => blkState[b.id] = false); 
+            knobVal = {}; // Reset knobs
             updateLCD();
             if(midiOut) midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
         }
 
+        // C. DECODER
         if(s === 0xF0) {
-            // BRUTE FORCE NAME FINDER
-            let raw = "";
-            for(let i=0; i<e.data.length; i++) {
-                let c = e.data[i];
-                if(c >= 32 && c <= 126) raw += String.fromCharCode(c);
-                else raw += "|"; // Separator
+            const data = e.data;
+            let nameBuffer = "";
+            for(let i=10; i<26; i++) {
+                let code = data[i];
+                if(code < NUX_CHARS.length) nameBuffer += NUX_CHARS[code];
             }
-            // Find longest clean string
-            let chunks = raw.split("|");
-            let name = chunks.reduce((a,b)=>a.length>b.length?a:b, "");
+            if(nameBuffer.length > 2) document.getElementById('lcdName').innerText = nameBuffer.substring(0,16);
             
-            // Clean up NUX Headers (like "MG-30" or "O")
-            if(name.length > 2) document.getElementById('lcdName').innerText = name.substring(0,16);
+            BLOCKS.forEach(blk => {
+                if(data.length > blk.b_offset) {
+                    let idx = data[blk.b_offset];
+                    const avail = Object.keys(DB[blk.id].models);
+                    if(avail[idx % avail.length]) currentModels[blk.id] = avail[idx % avail.length];
+                }
+            });
+            renderStage();
         }
     }
 
-    // --- 4. RENDER ---
+    // --- 5. RENDER ---
     function updateLCD() {
         let b = Math.floor(patchId/4)+1, s = ['A','B','C','D'][patchId%4];
         document.getElementById('lcdNum').innerText = (b<10?'0':'')+b+s;
@@ -205,11 +238,8 @@
             div.className = `block ${isOn?'active':''} ${activeBlk===b.id?'editing':''}`;
             div.innerHTML = `<div class="b-led"></div>${b.id}`;
             div.onclick = () => {
-                if(activeBlk === b.id) {
-                    blkState[b.id] = !isOn;
-                    if(midiOut) midiOut.send([0xB0, b.cc, blkState[b.id]?127:0]);
-                    renderChain();
-                } else {
+                if(activeBlk === b.id) { toggleBypass(b); } 
+                else {
                     activeBlk = b.id;
                     if(midiOut) midiOut.send([0xB0, 49, b.sel]);
                     renderChain(); renderStage();
@@ -217,6 +247,15 @@
             };
             c.appendChild(div);
         });
+    }
+
+    function toggleBypass(b) {
+        let newState = !blkState[b.id];
+        blkState[b.id] = newState;
+        if(midiOut) {
+            for(let ch=0; ch<16; ch++) { midiOut.send([0xB0 + ch, b.cc, newState?127:0]); }
+        }
+        renderChain();
     }
 
     function renderStage() {
@@ -230,6 +269,9 @@
             Object.keys(bDat.models).forEach(m => sel.appendChild(new Option(m,m)));
         }
         
+        const detected = currentModels[activeBlk];
+        if(detected) sel.value = detected;
+        
         const mod = sel.value || Object.keys(bDat.models)[0];
         const params = bDat.models[mod];
         const start = BLOCKS.find(b=>b.id===activeBlk).start;
@@ -237,6 +279,8 @@
         params.forEach((p, i) => {
             let cc = start + i;
             let val = knobVal[cc] !== undefined ? knobVal[cc] : 64;
+            let displayVal = Math.round((val / 127) * 100);
+
             let k = document.createElement('div'); k.className = 'k-wrap';
             k.innerHTML = `
                 <svg class="knob" viewBox="0 0 100 100" onpointerdown="drag(event, ${cc})">
@@ -244,14 +288,20 @@
                     <path id="arc-${cc}" d="M 20 80 A 45 45 0 1 1 80 80" class="k-val" stroke-dasharray="235" stroke-dashoffset="${235-(val*1.85)}"/>
                     <rect id="ptr-${cc}" x="48" y="10" width="4" height="20" fill="#fff" transform="rotate(${-135+(val*2.8)}, 50, 50)"/>
                 </svg>
-                <div class="k-num" id="txt-${cc}">${Math.round((val/127)*100)}</div>
+                <div class="k-num" id="txt-${cc}">${displayVal}</div>
                 <div class="k-lbl">${p}</div>
             `;
             ui.appendChild(k);
         });
     }
 
-    function setModel() { renderStage(); }
+    function manualModelChange() {
+        const sel = document.getElementById('modelSel');
+        currentModels[activeBlk] = sel.value;
+        renderStage();
+    }
+
+    function setModel() { manualModelChange(); }
 
     function updateKnobUI(cc, val) {
         const arc = document.getElementById(`arc-${cc}`);
@@ -267,8 +317,10 @@
     function drag(e, cc) {
         e.preventDefault(); const el = e.target.closest('svg'); el.setPointerCapture(e.pointerId);
         let y = e.clientY; let sv = knobVal[cc] || 64;
+        
         const b = BLOCKS.find(x=>x.id===activeBlk);
-        if(midiOut) midiOut.send([0xB0, 49, b.sel]); // Focus
+        if(midiOut) midiOut.send([0xB0, 49, b.sel]); 
+
         const move = ev => {
             let d = y - ev.clientY;
             let nv = Math.max(0, Math.min(127, sv + d));
@@ -287,11 +339,11 @@
         if(midiOut) midiOut.send([0xC0, patchId]);
     }
 
-    // --- 5. IO (OCTET STREAM FIX) ---
+    // --- 6. IO ---
     function exportDat() {
         const n = document.getElementById('lcdName').innerText || "patch";
-        // FORCE BINARY STREAM TO KILL .TXT EXTENSION
-        const blob = new Blob([JSON.stringify(knobVal)], {type: "application/octet-stream"});
+        const payload = { knobs: knobVal, models: currentModels };
+        const blob = new Blob([JSON.stringify(payload)], {type: "application/octet-stream"});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `${n}.mg30patch`;
@@ -304,16 +356,19 @@
         const r = new FileReader();
         r.onload = e => {
             try {
-                // SANITIZE INPUT (Trim whitespace/BOM)
-                const clean = e.target.result.trim();
-                const d = JSON.parse(clean);
-                Object.keys(d).forEach(cc => {
-                    knobVal[cc] = d[cc];
-                    if(midiOut) midiOut.send([0xB0, parseInt(cc), d[cc]]);
+                const txt = e.target.result;
+                if(!txt.trim().startsWith('{')) throw new Error("BINARY DETECTED. Cannot read official NUX files.");
+                const d = JSON.parse(txt);
+                let loadedKnobs = d.knobs || d;
+                let loadedModels = d.models || {};
+                Object.keys(loadedKnobs).forEach(cc => {
+                    knobVal[cc] = loadedKnobs[cc];
+                    if(midiOut) midiOut.send([0xB0, parseInt(cc), loadedKnobs[cc]]);
                 });
+                currentModels = { ...currentModels, ...loadedModels };
                 renderStage();
-                alert("Imported!");
-            } catch(err) { alert("File Error: " + err.message); }
+                alert("Patch Imported!");
+            } catch(err) { alert(err.message); }
         };
         r.readAsText(f);
     }
