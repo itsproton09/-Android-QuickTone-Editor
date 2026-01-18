@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX MG-30 EDITOR (v5.0.2)</title>
+    <title>NUX MG-30 PRO EDITOR</title>
     <style>
-        /* --- PROTON THEME ENGINE --- */
+        /* --- PROTON THEME --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@500;700&display=swap');
 
         :root { --bg:#050505; --panel:#111; --gold:#D4AF37; --text:#eee; --border:1px solid #333; }
@@ -14,7 +14,7 @@
         body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
         /* HEADER */
-        header { height:65px; background:#0c0c0c; border-bottom:var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 25px; z-index:100; }
+        header { height:60px; background:#0c0c0c; border-bottom:var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 20px; z-index:100; }
         .logo { font-weight:900; letter-spacing:1px; color:#fff; font-size:16px; } .logo span { color:var(--gold); }
         .status-led { width:12px; height:12px; background:#333; border-radius:50%; box-shadow:0 0 5px #000; transition:0.3s; }
         .status-led.on { background:#00E676; box-shadow:0 0 15px #00E676; }
@@ -25,7 +25,7 @@
         .lcd-header { height:26px; background:#1a1a1a; display:flex; justify-content:space-between; padding:0 12px; align-items:center; font-family:'JetBrains Mono'; font-size:11px; color:#666; }
         .lcd-body { flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; background:radial-gradient(circle at 50% 120%, #151515 0%, #000 90%); }
         .patch-id { font-family:'JetBrains Mono'; font-size:3.8rem; font-weight:700; color:var(--gold); line-height:1; }
-        .patch-lbl { font-family:'Inter'; font-size:1rem; letter-spacing:2px; color:#ddd; margin-top:8px; text-transform:uppercase; font-weight:700; text-shadow:0 0 10px rgba(255,255,255,0.15); }
+        .patch-lbl { font-family:'Inter'; font-size:1.1rem; letter-spacing:2px; color:#ddd; margin-top:8px; text-transform:uppercase; font-weight:700; text-shadow:0 0 10px rgba(255,255,255,0.15); }
 
         .nav-bar { display:flex; gap:12px; width:340px; justify-content:space-between; }
         .nav-btn { background:#1a1a1a; border:1px solid #333; color:#888; width:65px; height:36px; border-radius:4px; cursor:pointer; transition:0.2s; font-weight:700; font-size:18px; display:grid; place-items:center; }
@@ -73,66 +73,6 @@
         .btn-scan { background:var(--gold); color:#000; border:none; padding:8px 20px; font-weight:800; cursor:pointer; font-size:11px; border-radius:4px; }
         .btn-close { background:transparent; border:1px solid #444; color:#fff; padding:8px 20px; font-weight:700; cursor:pointer; font-size:11px; border-radius:4px; }
     </style>
-</head>
-<body>
-
-    <div id="modal" class="overlay">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3 class="modal-title">PATCH MANAGER</h3>
-                <button class="btn-scan" onclick="scanNames()">SCAN ALL NAMES</button>
-            </div>
-            <div class="slot-grid" id="grid"></div>
-            <div style="margin-top:20px; text-align:right;">
-                <button class="btn-close" onclick="closeModal()">CLOSE</button>
-            </div>
-        </div>
-    </div>
-
-    <header>
-        <div class="logo">NUX <span>v5.0.2</span></div>
-        <div class="status-led" id="led"></div>
-    </header>
-
-    <div class="rig-section">
-        <div class="lcd-screen">
-            <div class="lcd-header"><span>USB: <b id="usb-state">--</b></span><span>BPM 120</span></div>
-            <div class="lcd-body">
-                <div class="patch-id" id="lcd-num">--</div>
-                <div class="patch-lbl" id="lcd-name">OFFLINE</div>
-            </div>
-        </div>
-        <div class="nav-bar">
-            <button class="nav-btn" onclick="nav(-1)">◀</button>
-            <button class="nav-btn" onclick="nav(1)">▶</button>
-        </div>
-    </div>
-
-    <div class="chain-strip">
-        <div class="pedal" id="b-WAH" onclick="setBlock('WAH')">WAH</div>
-        <div class="pedal" id="b-CMP" onclick="setBlock('CMP')">CMP</div>
-        <div class="pedal" id="b-EFX" onclick="setBlock('EFX')">EFX</div>
-        <div class="pedal selected" id="b-AMP" onclick="setBlock('AMP')">AMP</div>
-        <div class="pedal" id="b-NR"  onclick="setBlock('NR')">GATE</div>
-        <div class="pedal" id="b-EQ"  onclick="setBlock('EQ')">EQ</div>
-        <div class="pedal" id="b-MOD" onclick="setBlock('MOD')">MOD</div>
-        <div class="pedal" id="b-DLY" onclick="setBlock('DLY')">DLY</div>
-        <div class="pedal" id="b-RVB" onclick="setBlock('RVB')">RVB</div>
-        <div class="pedal" id="b-IR"  onclick="setBlock('IR')">IR</div>
-    </div>
-
-    <div class="stage">
-        <select class="model-list" id="models" onchange="drawKnobs()"></select>
-        <div class="knob-grid" id="knobs"></div>
-    </div>
-
-    <footer>
-        <button class="btn" onclick="openModal()">Patch Manager</button>
-        <button class="btn" onclick="doExport()">Export Patch</button>
-        <button class="btn btn-green" onclick="initUSB()">CONNECT USB</button>
-    </footer>
-
-    <input type="file" id="fileInput" hidden onchange="fileHandler(this)">
 
     <script>
         // ===========================================
@@ -153,17 +93,40 @@
                 'Crunch':[{n:'GAIN',cc:20},{n:'VOL',cc:21},{n:'PRES',cc:22}], 'Muff Fuzz':[{n:'SUST',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Katana':[{n:'BST',cc:20},{n:'VOL',cc:21}],
                 'Red Fuzz':[{n:'FUZZ',cc:20},{n:'LVL',cc:21}], 'Touch Wah':[{n:'SENS',cc:20},{n:'RES',cc:21},{n:'DEC',cc:22}]
             },
-            'AMP': {
+            'AMP': { 
+                // CLEAN & CRUNCH
                 'Jazz Clean':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
                 'Deluxe Rvb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
                 'Bassman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Recto Dual':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Diezel VH4':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}],
+                'Twin Rvb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
+                'HiWatt':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
                 'AC30 Top':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
+                'Matchless':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
+                'Vibro King':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
+                'Budda':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'CUT',cc:35}],
+                'Super Rvb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
+                
+                // HIGH GAIN
                 'Plexi 100':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
                 'Brit 800':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Plx 45':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Brit 2000':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Gold 100':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
                 'Soldano':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Friedman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}]
+                'Recto Dual':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Diezel VH4':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}],
+                'Friedman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Uber':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Diezel Herbert':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}],
+                'Fireman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+                'Vibroverb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
+                'Dr. Z':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
+                'Dual Rect':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
+
+                // BASS
+                'AGL':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
+                'MLD':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
+                'Starlift':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}]
             },
             'EQ': { '6-Band':[{n:'100',cc:45},{n:'200',cc:46},{n:'400',cc:47},{n:'800',cc:48},{n:'1.6K',cc:49},{n:'3.2K',cc:50}], 'Align':[{n:'GAIN',cc:45},{n:'FREQ',cc:46},{n:'Q',cc:47}], '10-Band':[{n:'31',cc:45},{n:'63',cc:46},{n:'125',cc:47},{n:'250',cc:48},{n:'500',cc:49},{n:'1K',cc:50},{n:'2K',cc:51},{n:'4K',cc:52},{n:'8K',cc:53},{n:'16K',cc:54}], 'Para':[{n:'FREQ',cc:45},{n:'GAIN',cc:46},{n:'Q',cc:47}] },
             'MOD': {
@@ -192,8 +155,9 @@
         let scanMode = false;
         let scanIndex = 0;
 
-        // Auto-run when DOM is ready
-        window.addEventListener('DOMContentLoaded', () => {
+        // SAFE BOOT: Listen for window load, then start.
+        window.addEventListener('load', () => {
+            console.log("System Ready");
             setBlock('AMP');
             makeGrid();
         });
@@ -203,14 +167,19 @@
         // ===========================================
         function setBlock(blk) {
             actBlock = blk;
-            // Visual Update
             document.querySelectorAll('.pedal').forEach(e => e.classList.remove('selected'));
             document.getElementById('b-'+blk).classList.add('selected');
-            // Dropdown Update
-            const s = document.getElementById('models');
-            s.innerHTML = '';
-            const list = Object.keys(DB[blk] || {});
-            list.forEach(m => s.appendChild(new Option(m, m)));
+
+            const sel = document.getElementById('models');
+            sel.innerHTML = "";
+            const models = Object.keys(DB[blk] || {});
+            
+            if(models.length > 0) {
+                models.forEach(m => sel.appendChild(new Option(m, m)));
+                sel.disabled = false;
+            } else {
+                sel.appendChild(new Option("NO MODELS")); sel.disabled = true;
+            }
             drawKnobs();
         }
 
@@ -249,9 +218,8 @@
             e.target.onpointermove = (ev) => {
                 if(!isDrag) return;
                 let diff = dy - ev.clientY;
-                dval = Math.max(0, Math.min(100, dval + diff)); // 0-100 UI Limit
+                dval = Math.max(0, Math.min(100, dval + diff)); 
                 
-                // Draw UI
                 let pct = dval/100;
                 let off = 200 - (pct*200);
                 let ang = -135 + (pct*270);
@@ -264,7 +232,6 @@
                 if(ptr) ptr.setAttribute('transform', `rotate(${ang} 50 50)`);
                 if(txt) txt.innerText = dval;
                 
-                // Send MIDI (Scale 0-100 -> 0-127)
                 if(midiOut) midiOut.send([0xB0, dcc, Math.floor(dval * 1.27)]);
                 dy = ev.clientY;
             };
@@ -297,24 +264,18 @@
 
         function handleMsg(e) {
             let d = e.data;
-            
-            // EXPORT TRAP
-            if(waitingForExport && d[0]===0xF0 && d.length>60) {
+            if (waitingForExport && d[0]===0xF0 && d.length>60) {
                 let n = document.getElementById('lcd-name').innerText.trim();
                 saveBlob(d, n+".mg30patch");
                 waitingForExport = false;
                 alert("Exported!");
                 return;
             }
-
-            // PATCH CHANGE
             if((d[0]&0xF0)===0xC0) {
                 curPatch = d[1];
                 updScreen();
                 setTimeout(askDump, 50);
             }
-
-            // NAME DECODE
             if(d[0]===0xF0 && d.length>20) {
                 if(scanMode) {
                     let name = parseName(d);
@@ -379,19 +340,11 @@
             r.onload = (e) => {
                 let dat = new Uint8Array(e.target.result);
                 if(midiOut) {
-                    if(confirm("Overwrite slot "+selSlot+"?")) {
+                    if(confirm("Overwrite?")) {
                         midiOut.send([0xC0, selSlot]);
-                        setTimeout(()=>{
-                            try {
-                                midiOut.send(dat);
-                                curPatch=selSlot;
-                                updScreen();
-                                setTimeout(askDump,300);
-                                alert("Imported!");
-                            } catch(e){alert("Error");}
-                        }, 200);
+                        setTimeout(()=>{ midiOut.send(dat); curPatch=selSlot; updScreen(); setTimeout(askDump,200); }, 150);
                     }
-                } else alert("Connect USB");
+                } else alert("Connect First");
             };
             r.readAsArrayBuffer(f);
             closeModal();
@@ -399,7 +352,7 @@
         }
 
         function doExport() {
-            if(!midiOut) return alert("Connect USB");
+            if(!midiOut) return alert("Connect First");
             if(confirm("Download?")) {
                 waitingForExport = true;
                 askDump();
@@ -431,5 +384,66 @@
         }
 
     </script>
+</head>
+<body>
+
+    <div id="modal" class="overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">PATCH MANAGER</h3>
+                <button class="btn-scan" onclick="scanNames()">SCAN ALL NAMES</button>
+            </div>
+            <div class="slot-grid" id="grid"></div>
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn-close" onclick="closeModal()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo">NUX <span>v5.0.2</span></div>
+        <div class="status-led" id="led"></div>
+    </header>
+
+    <div class="rig-section">
+        <div class="lcd-screen">
+            <div class="lcd-header"><span>USB: <b id="usb-state">--</b></span><span>BPM 120</span></div>
+            <div class="lcd-body">
+                <div class="patch-id" id="lcd-num">--</div>
+                <div class="patch-lbl" id="lcd-name">OFFLINE</div>
+            </div>
+        </div>
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="nav(-1)">◀</button>
+            <button class="nav-btn" onclick="nav(1)">▶</button>
+        </div>
+    </div>
+
+    <div class="chain-strip">
+        <div class="pedal" id="b-WAH" onclick="setBlock('WAH')">WAH</div>
+        <div class="pedal" id="b-CMP" onclick="setBlock('CMP')">CMP</div>
+        <div class="pedal" id="b-EFX" onclick="setBlock('EFX')">EFX</div>
+        <div class="pedal selected" id="b-AMP" onclick="setBlock('AMP')">AMP</div>
+        <div class="pedal" id="b-NR"  onclick="setBlock('NR')">GATE</div>
+        <div class="pedal" id="b-EQ"  onclick="setBlock('EQ')">EQ</div>
+        <div class="pedal" id="b-MOD" onclick="setBlock('MOD')">MOD</div>
+        <div class="pedal" id="b-DLY" onclick="setBlock('DLY')">DLY</div>
+        <div class="pedal" id="b-RVB" onclick="setBlock('RVB')">RVB</div>
+        <div class="pedal" id="b-IR"  onclick="setBlock('IR')">IR</div>
+    </div>
+
+    <div class="stage">
+        <select class="model-list" id="models" onchange="drawKnobs()"></select>
+        <div class="knob-grid" id="knobs"></div>
+    </div>
+
+    <footer>
+        <button class="btn" onclick="openModal()">Patch Manager</button>
+        <button class="btn" onclick="doExport()">Export Patch</button>
+        <button class="btn btn-green" onclick="initUSB()">CONNECT USB</button>
+    </footer>
+
+    <input type="file" id="fileInput" hidden onchange="fileHandler(this)">
+
 </body>
 </html>
