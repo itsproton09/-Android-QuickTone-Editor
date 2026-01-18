@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX MG-30 FINAL V32</title>
+    <title>NUX MG-30 FINAL V33</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
         
@@ -40,13 +40,9 @@
             display:flex; flex-direction:column; justify-content:center; align-items:center; 
             font-size:9px; font-weight:800; color:#555; cursor:pointer; position:relative; transition:0.1s;
         }
-        /* ACTIVE STATE (GREEN) */
         .block.active { background:linear-gradient(180deg, #333, #222); border-color:#444; color:#ccc; }
         .block.active .b-led { background:var(--accent); box-shadow:0 0 5px var(--accent); opacity:1; }
-        
-        /* EDITING STATE (GOLD BORDER) */
         .block.editing { border-color:var(--gold); color:var(--gold); transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.5); }
-        
         .b-led { width:5px; height:5px; background:#000; border-radius:50%; margin-bottom:3px; border:1px solid #111; opacity:0.3; }
 
         /* STAGE */
@@ -66,9 +62,6 @@
         .k-num { font-family:'JetBrains Mono'; font-size:12px; font-weight:700; color:rgba(255,255,255,0.9); margin-bottom:3px; }
         .k-lbl { font-size:9px; font-weight:900; color:rgba(255,255,255,0.6); text-transform:uppercase; text-align:center; }
 
-        /* DEBUG FOOTER */
-        .rx-log { font-family:'JetBrains Mono'; font-size:9px; color:#555; margin-right:10px; }
-
         footer { height:50px; background:#080808; border-top:1px solid #333; display:flex; gap:10px; padding:0 15px; align-items:center; }
         .btn-act { flex:1; height:34px; background:#1a1a1a; border:1px solid #333; color:#aaa; font-size:10px; font-weight:900; border-radius:4px; cursor:pointer; }
         .btn-green { color:var(--accent); background:rgba(0,230,118,0.05); border-color:rgba(0,230,118,0.2); }
@@ -77,7 +70,7 @@
 <body>
 
     <header>
-        <div class="logo">NUX <span>PRO V32</span></div>
+        <div class="logo">NUX <span>PRO V33</span></div>
         <div class="status" id="led"></div>
     </header>
 
@@ -104,7 +97,6 @@
     </div>
 
     <footer>
-        <span class="rx-log" id="rxLog">RX: --</span>
         <button class="btn-act btn-green" onclick="init()">LINK HARDWARE</button>
         <button class="btn-act" onclick="document.getElementById('imp').click()">IMPORT</button>
         <button class="btn-act" onclick="exportDat()">EXPORT</button>
@@ -126,7 +118,6 @@
         'IR': { type:'pedal', models:{'Cab':['LO','HI','LVL'] }}
     };
 
-    // --- 2. LOGIC MAP ---
     const BLOCKS = [
         { id:'WAH', cc:9,  sel:1,  start:10, b_offset: 12 }, 
         { id:'CMP', cc:14, sel:2,  start:15, b_offset: 20 },
@@ -145,24 +136,29 @@
     let midiOut=null, patchId=0, activeBlk='AMP';
     let blkState={}, knobVal={}, currentModels={};
 
-    // --- 3. INIT ---
+    // --- 2. INIT (ROBUST) ---
     function init() {
-        if(!navigator.requestMIDIAccess) return;
+        if(!navigator.requestMIDIAccess) { alert("MIDI not supported"); return; }
+        
         navigator.requestMIDIAccess({sysex:true}).then(acc => {
             const outs = Array.from(acc.outputs.values());
+            // LOOSE MATCHING: Try any output if "NUX" not found
             midiOut = outs.find(o => o.name.includes("MG-30") || o.name.includes("NUX")) || outs[0];
+            
             if(midiOut) {
                 document.getElementById('led').className='status on';
                 document.getElementById('offMsg').style.display='none';
                 
+                // BURST: Simple Handshake First
                 midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
 
                 const ins = Array.from(acc.inputs.values());
                 const inp = ins.find(i => i.name.includes("MG-30") || i.name.includes("NUX")) || ins[0];
                 if(inp) inp.onmidimessage = handle;
+                
                 acc.onstatechange = e => { if(e.port.state==='disconnected') setOffline(); };
             } else { setOffline(); }
-        });
+        }).catch(err => alert("MIDI Access Denied: " + err));
     }
 
     function setOffline() {
@@ -171,22 +167,16 @@
         document.getElementById('lcdName').innerText="DISCONNECTED";
     }
 
-    // --- 4. OMNI-CHANNEL HANDLER ---
+    // --- 3. HANDLER (OMNI) ---
     function handle(e) {
         const [s, d1, d2] = e.data;
-        const status = s & 0xF0; // Strip channel info
+        const status = s & 0xF0;
 
-        // DEBUG: LOG EVERYTHING
-        if(status === 0xB0) {
-            document.getElementById('rxLog').innerText = `RX: CC ${d1} -> ${d2}`;
-        }
-
-        // A. KNOB / BYPASS (LISTEN TO ALL CHANNELS 0xB0 - 0xBF)
+        // A. KNOB / BYPASS
         if(status === 0xB0) {
             const blk = BLOCKS.find(b => b.cc === d1);
             if(blk) { 
-                // V32 FIX: UPDATE STATE & RENDER
-                blkState[blk.id] = d2 > 63; // 127=ON
+                blkState[blk.id] = d2 > 63; 
                 renderChain(); 
             } else { 
                 knobVal[d1] = d2; 
@@ -198,7 +188,7 @@
         if(status === 0xC0) {
             patchId = d1;
             BLOCKS.forEach(b => blkState[b.id] = false); 
-            knobVal = {}; // Reset knobs
+            knobVal = {}; 
             updateLCD();
             if(midiOut) midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
         }
@@ -212,7 +202,14 @@
                 if(code < NUX_CHARS.length) nameBuffer += NUX_CHARS[code];
             }
             if(nameBuffer.length > 2) document.getElementById('lcdName').innerText = nameBuffer.substring(0,16);
-            
+            else {
+                let raw = "";
+                for(let i=0; i<data.length; i++) {
+                    if(data[i] >= 32 && data[i] <= 126) raw += String.fromCharCode(data[i]);
+                }
+                if(raw.length > 3) document.getElementById('lcdName').innerText = raw.substring(0,16);
+            }
+
             BLOCKS.forEach(blk => {
                 if(data.length > blk.b_offset) {
                     let idx = data[blk.b_offset];
@@ -224,7 +221,7 @@
         }
     }
 
-    // --- 5. RENDER ---
+    // --- 4. RENDER ---
     function updateLCD() {
         let b = Math.floor(patchId/4)+1, s = ['A','B','C','D'][patchId%4];
         document.getElementById('lcdNum').innerText = (b<10?'0':'')+b+s;
