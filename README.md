@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX MG-30 FINAL V33</title>
+    <title>NUX MG-30 FINAL V32</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
         
@@ -16,6 +16,7 @@
         .logo { font-weight:900; color:#fff; font-size:14px; letter-spacing:1px; } .logo span { color:var(--gold); }
         .status { width:10px; height:10px; background:#222; border-radius:50%; box-shadow:0 0 5px #000; transition:0.3s; }
         .status.on { background:var(--accent); box-shadow:0 0 10px var(--accent); }
+        .status.rx { background:#fff; box-shadow:0 0 10px #fff; }
 
         /* LCD AREA */
         .top-deck { background:#181818; padding:15px 0; border-bottom:2px solid #2a2a2a; z-index:10; }
@@ -70,7 +71,7 @@
 <body>
 
     <header>
-        <div class="logo">NUX <span>PRO V33</span></div>
+        <div class="logo">NUX <span>PRO V32</span></div>
         <div class="status" id="led"></div>
     </header>
 
@@ -104,7 +105,7 @@
     <input type="file" id="imp" hidden onchange="importDat(this)">
 
 <script>
-    // --- 1. FULL DATABASE (V5.0.2) ---
+    // --- 1. FULL DATABASE ---
     const DB = {
         'WAH': { type:'pedal', models:{'Clyde':['POS','MIN','MAX'], 'Cry BB':['POS','MIN','MAX'], 'V847':['POS','MIN','MAX'], 'Horse Wah':['POS','MIN','MAX'], 'Octave Shift':['PITCH','MIX','LO','HI'] }},
         'CMP': { type:'pedal', models:{'Rose':['SUS','LVL'], 'K Comp':['SUS','LVL','CLIP'], 'Studio Comp':['THR','RAT','GN','ATK'] }},
@@ -118,17 +119,19 @@
         'IR': { type:'pedal', models:{'Cab':['LO','HI','LVL'] }}
     };
 
+    // --- 2. CONFIG: CORRECTED ORDER & MAPPING ---
+    // Order: WAH -> GATE -> CMP -> EFX -> AMP -> IR -> EQ -> MOD -> DLY -> RVB
     const BLOCKS = [
         { id:'WAH', cc:9,  sel:1,  start:10, b_offset: 12 }, 
+        { id:'GATE',cc:39, sel:3,  start:40, b_offset: 60 },
         { id:'CMP', cc:14, sel:2,  start:15, b_offset: 20 },
-        { id:'GATE',cc:39, sel:3,  start:40, b_offset: 60 }, 
         { id:'EFX', cc:19, sel:4,  start:20, b_offset: 24 },
         { id:'AMP', cc:29, sel:5,  start:30, b_offset: 32 }, 
+        { id:'IR',  cc:89, sel:10, start:90, b_offset: 72 },
         { id:'EQ',  cc:44, sel:6,  start:45, b_offset: 40 },
         { id:'MOD', cc:59, sel:7,  start:60, b_offset: 48 }, 
         { id:'DLY', cc:69, sel:8,  start:70, b_offset: 56 },
-        { id:'RVB', cc:79, sel:9,  start:80, b_offset: 64 }, 
-        { id:'IR',  cc:89, sel:10, start:90, b_offset: 72 }
+        { id:'RVB', cc:79, sel:9,  start:80, b_offset: 64 }
     ];
 
     const NUX_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
@@ -136,21 +139,17 @@
     let midiOut=null, patchId=0, activeBlk='AMP';
     let blkState={}, knobVal={}, currentModels={};
 
-    // --- 2. INIT (ROBUST) ---
+    // --- 3. INIT ---
     function init() {
-        if(!navigator.requestMIDIAccess) { alert("MIDI not supported"); return; }
-        
+        if(!navigator.requestMIDIAccess) return;
         navigator.requestMIDIAccess({sysex:true}).then(acc => {
             const outs = Array.from(acc.outputs.values());
-            // LOOSE MATCHING: Try any output if "NUX" not found
             midiOut = outs.find(o => o.name.includes("MG-30") || o.name.includes("NUX")) || outs[0];
             
             if(midiOut) {
                 document.getElementById('led').className='status on';
                 document.getElementById('offMsg').style.display='none';
-                
-                // BURST: Simple Handshake First
-                midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
+                midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]); // Handshake
 
                 const ins = Array.from(acc.inputs.values());
                 const inp = ins.find(i => i.name.includes("MG-30") || i.name.includes("NUX")) || ins[0];
@@ -158,7 +157,7 @@
                 
                 acc.onstatechange = e => { if(e.port.state==='disconnected') setOffline(); };
             } else { setOffline(); }
-        }).catch(err => alert("MIDI Access Denied: " + err));
+        });
     }
 
     function setOffline() {
@@ -167,33 +166,50 @@
         document.getElementById('lcdName').innerText="DISCONNECTED";
     }
 
-    // --- 3. HANDLER (OMNI) ---
+    // --- 4. MIDI HANDLER (FIXED) ---
     function handle(e) {
         const [s, d1, d2] = e.data;
-        const status = s & 0xF0;
+        const cmd = s & 0xF0;
 
-        // A. KNOB / BYPASS
-        if(status === 0xB0) {
+        // Visual RX blink
+        const led = document.getElementById('led');
+        led.classList.add('rx'); setTimeout(() => led.classList.remove('rx'), 100);
+
+        // A. CONTROL CHANGE
+        if(cmd === 0xB0) {
+            // 1. Bypass Sync (Green Light)
             const blk = BLOCKS.find(b => b.cc === d1);
             if(blk) { 
                 blkState[blk.id] = d2 > 63; 
                 renderChain(); 
-            } else { 
-                knobVal[d1] = d2; 
-                updateKnobUI(d1, d2); 
+                return;
+            } 
+            
+            // 2. Selection Sync (Yellow Box) - CC 49
+            if(d1 === 49) {
+                const selBlk = BLOCKS.find(b => b.sel === d2);
+                if(selBlk) {
+                    activeBlk = selBlk.id;
+                    renderChain();
+                    renderStage();
+                }
+                return;
             }
+
+            // 3. Knobs
+            knobVal[d1] = d2; 
+            updateKnobUI(d1, d2); 
         }
 
         // B. PATCH CHANGE
-        if(status === 0xC0) {
+        if(cmd === 0xC0) {
             patchId = d1;
-            BLOCKS.forEach(b => blkState[b.id] = false); 
             knobVal = {}; 
             updateLCD();
             if(midiOut) midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
         }
 
-        // C. DECODER
+        // C. SYSEX DUMP
         if(s === 0xF0) {
             const data = e.data;
             let nameBuffer = "";
@@ -202,14 +218,7 @@
                 if(code < NUX_CHARS.length) nameBuffer += NUX_CHARS[code];
             }
             if(nameBuffer.length > 2) document.getElementById('lcdName').innerText = nameBuffer.substring(0,16);
-            else {
-                let raw = "";
-                for(let i=0; i<data.length; i++) {
-                    if(data[i] >= 32 && data[i] <= 126) raw += String.fromCharCode(data[i]);
-                }
-                if(raw.length > 3) document.getElementById('lcdName').innerText = raw.substring(0,16);
-            }
-
+            
             BLOCKS.forEach(blk => {
                 if(data.length > blk.b_offset) {
                     let idx = data[blk.b_offset];
@@ -221,7 +230,7 @@
         }
     }
 
-    // --- 4. RENDER ---
+    // --- 5. RENDER LOGIC ---
     function updateLCD() {
         let b = Math.floor(patchId/4)+1, s = ['A','B','C','D'][patchId%4];
         document.getElementById('lcdNum').innerText = (b<10?'0':'')+b+s;
@@ -229,6 +238,7 @@
 
     function renderChain() {
         const c = document.getElementById('chainUI'); c.innerHTML='';
+        // Renders in order of BLOCKS array (Wah -> Gate -> Comp...)
         BLOCKS.forEach(b => {
             let isOn = blkState[b.id] === true;
             let div = document.createElement('div');
@@ -238,7 +248,7 @@
                 if(activeBlk === b.id) { toggleBypass(b); } 
                 else {
                     activeBlk = b.id;
-                    if(midiOut) midiOut.send([0xB0, 49, b.sel]);
+                    if(midiOut) midiOut.send([0xB0, 49, b.sel]); // Send Select
                     renderChain(); renderStage();
                 }
             };
@@ -249,9 +259,7 @@
     function toggleBypass(b) {
         let newState = !blkState[b.id];
         blkState[b.id] = newState;
-        if(midiOut) {
-            for(let ch=0; ch<16; ch++) { midiOut.send([0xB0 + ch, b.cc, newState?127:0]); }
-        }
+        if(midiOut) midiOut.send([0xB0, b.cc, newState ? 127 : 0]); // Send Single CC
         renderChain();
     }
 
@@ -298,8 +306,6 @@
         renderStage();
     }
 
-    function setModel() { manualModelChange(); }
-
     function updateKnobUI(cc, val) {
         const arc = document.getElementById(`arc-${cc}`);
         const ptr = document.getElementById(`ptr-${cc}`);
@@ -316,7 +322,7 @@
         let y = e.clientY; let sv = knobVal[cc] || 64;
         
         const b = BLOCKS.find(x=>x.id===activeBlk);
-        if(midiOut) midiOut.send([0xB0, 49, b.sel]); 
+        if(midiOut) midiOut.send([0xB0, 49, b.sel]); // Ensure selected
 
         const move = ev => {
             let d = y - ev.clientY;
@@ -336,7 +342,6 @@
         if(midiOut) midiOut.send([0xC0, patchId]);
     }
 
-    // --- 6. IO ---
     function exportDat() {
         const n = document.getElementById('lcdName').innerText || "patch";
         const payload = { knobs: knobVal, models: currentModels };
@@ -354,7 +359,7 @@
         r.onload = e => {
             try {
                 const txt = e.target.result;
-                if(!txt.trim().startsWith('{')) throw new Error("BINARY DETECTED. Cannot read official NUX files.");
+                if(!txt.trim().startsWith('{')) throw new Error("BINARY DETECTED");
                 const d = JSON.parse(txt);
                 let loadedKnobs = d.knobs || d;
                 let loadedModels = d.models || {};
@@ -364,13 +369,10 @@
                 });
                 currentModels = { ...currentModels, ...loadedModels };
                 renderStage();
-                alert("Patch Imported!");
-            } catch(err) { alert(err.message); }
+            } catch(err) { alert("Invalid File Format"); }
         };
         r.readAsText(f);
     }
-
-    renderChain(); renderStage();
 </script>
 </body>
 </html>
