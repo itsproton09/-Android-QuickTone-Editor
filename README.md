@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX MG-30 FINAL V35</title>
+    <title>NUX MG-30 FINAL V36 (DEEP READ)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
         
@@ -18,17 +18,10 @@
         .status.on { background:var(--accent); box-shadow:0 0 15px var(--accent); }
         .status.rx { background:#fff; box-shadow:0 0 15px #fff; }
 
-        /* LCD AREA (Top Deck) */
+        /* LCD AREA */
         .top-deck { background:#181818; padding:15px 0; border-bottom:2px solid #2a2a2a; z-index:10; display:flex; flex-direction:column; align-items:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); flex-shrink:0; }
-        
-        /* LCD Screen */
         .lcd-wrap { display:flex; flex-direction:column; align-items:center; transform:scale(1.0); margin-bottom:10px; }
-        
-        .lcd { 
-            width:300px; height:80px; background:#000; border:3px solid #333; border-radius:6px; 
-            display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; overflow:hidden;
-            box-shadow:inset 0 0 20px rgba(255,255,255,0.05);
-        }
+        .lcd { width:300px; height:80px; background:#000; border:3px solid #333; border-radius:6px; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; overflow:hidden; box-shadow:inset 0 0 20px rgba(255,255,255,0.05); }
         .p-num { font-family:'JetBrains Mono'; font-size:2.5rem; color:var(--gold); line-height:1; z-index:2; text-shadow:0 0 20px rgba(212,175,55,0.3); }
         .p-name { font-family:'Inter'; font-size:1rem; color:#fff; font-weight:700; text-transform:uppercase; z-index:2; letter-spacing:2px; margin-top:5px; }
         .lcd-msg { position:absolute; top:6px; right:6px; background:var(--danger); color:#fff; padding:3px 6px; font-size:10px; font-weight:900; display:none; border-radius:3px; }
@@ -39,16 +32,8 @@
         .btn-nav:active { background:#444; color:#fff; }
 
         /* SIGNAL CHAIN */
-        .chain-strip { 
-            height:80px; display:flex; align-items:center; justify-content:center; 
-            padding:0 20px; gap:8px; width:100%; max-width:100%;
-            overflow-x:auto; margin-top:5px; scrollbar-width:none; 
-        }
-        .block { 
-            min-width:65px; height:55px; background:#222; border:1px solid #333; border-radius:4px; 
-            display:flex; flex-direction:column; justify-content:center; align-items:center; 
-            font-size:10px; font-weight:800; color:#555; cursor:pointer; position:relative; transition:0.2s;
-        }
+        .chain-strip { height:80px; display:flex; align-items:center; justify-content:center; padding:0 20px; gap:8px; width:100%; max-width:100%; overflow-x:auto; margin-top:5px; scrollbar-width:none; }
+        .block { min-width:65px; height:55px; background:#222; border:1px solid #333; border-radius:4px; display:flex; flex-direction:column; justify-content:center; align-items:center; font-size:10px; font-weight:800; color:#555; cursor:pointer; position:relative; transition:0.2s; }
         .block:hover { background:#2a2a2a; }
         .block.active { background:linear-gradient(180deg, #333, #222); border-color:#555; color:#ddd; }
         .block.active .b-led { background:var(--accent); box-shadow:0 0 8px var(--accent); opacity:1; }
@@ -57,31 +42,15 @@
 
         /* STAGE */
         .stage { flex:1; background:#161616; padding:30px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; width:100%; }
-        
         .controls-header { width:100%; max-width:1000px; margin-bottom:20px; display:flex; justify-content:center; flex-shrink:0; }
-        select { 
-            background:#222; color:var(--gold); border:2px solid #333; padding:10px 30px; 
-            font-family:'JetBrains Mono'; border-radius:30px; outline:none; font-weight:700; 
-            text-transform:uppercase; cursor:pointer; width:100%; max-width:300px; font-size:14px; 
-            box-shadow:0 5px 15px rgba(0,0,0,0.3); transition:0.2s;
-        }
+        select { background:#222; color:var(--gold); border:2px solid #333; padding:10px 30px; font-family:'JetBrains Mono'; border-radius:30px; outline:none; font-weight:700; text-transform:uppercase; cursor:pointer; width:100%; max-width:300px; font-size:14px; box-shadow:0 5px 15px rgba(0,0,0,0.3); transition:0.2s; }
         select:hover { border-color:#444; background:#282828; }
 
-        /* CHASSIS - KNOB AREA */
-        .chassis { 
-            width:100%; max-width:1200px;
-            border-radius:12px; padding:30px; 
-            display:flex; flex-wrap:wrap; justify-content:center; gap:25px; 
-            border:2px solid #333; position:relative; background:#1a1a1a;
-            box-shadow:0 0 50px rgba(0,0,0,0.5);
-            margin-bottom:20px;
-        }
-        
+        /* CHASSIS */
+        .chassis { width:100%; max-width:1200px; border-radius:12px; padding:30px; display:flex; flex-wrap:wrap; justify-content:center; gap:25px; border:2px solid #333; position:relative; background:#1a1a1a; box-shadow:0 0 50px rgba(0,0,0,0.5); margin-bottom:20px; }
         .k-wrap { display:flex; flex-direction:column; align-items:center; width:90px; }
-        
         svg.knob { width:70px; height:70px; cursor:ns-resize; filter:drop-shadow(0 5px 5px rgba(0,0,0,0.5)); transition:transform 0.1s; }
         svg.knob:active { transform:scale(1.05); }
-        
         .k-val { fill:none; stroke:var(--gold); stroke-width:6; stroke-linecap:round; }
         .k-num { font-family:'JetBrains Mono'; font-size:14px; font-weight:700; color:rgba(255,255,255,0.9); margin-bottom:5px; margin-top:5px; }
         .k-lbl { font-size:11px; font-weight:900; color:rgba(255,255,255,0.5); text-transform:uppercase; text-align:center; letter-spacing:1px; }
@@ -95,7 +64,7 @@
 <body>
 
     <header>
-        <div class="logo">NUX <span>PRO V35</span></div>
+        <div class="logo">NUX <span>PRO V36</span></div>
         <div class="status" id="led"></div>
     </header>
 
@@ -195,15 +164,13 @@
             const blk = BLOCKS.find(b => b.cc === d1);
             if(blk) { 
                 blkState[blk.id] = d2 > 0; 
-                renderChain(); 
-                return;
+                renderChain(); return;
             } 
             if(d1 === 49) {
                 const selBlk = BLOCKS.find(b => b.sel === d2);
                 if(selBlk) {
                     activeBlk = selBlk.id;
-                    renderChain();
-                    renderStage();
+                    renderChain(); renderStage();
                 }
                 return;
             }
@@ -227,13 +194,30 @@
             }
             if(nameBuffer.length > 2) document.getElementById('lcdName').innerText = nameBuffer.substring(0,16);
             
+            // --- DEEP READ: MODEL, STATUS & PARAMETERS ---
             BLOCKS.forEach(blk => {
                 if(data.length > blk.b_offset) {
+                    // 1. Model
                     let idx = data[blk.b_offset];
                     const avail = Object.keys(DB[blk.id].models);
-                    if(avail[idx % avail.length]) currentModels[blk.id] = avail[idx % avail.length];
+                    const foundModel = avail[idx % avail.length] || avail[0];
+                    currentModels[blk.id] = foundModel;
+
+                    // 2. Status
                     let statusByte = data[blk.b_offset + 1];
-                    blkState[blk.id] = statusByte > 0; 
+                    blkState[blk.id] = statusByte > 0;
+
+                    // 3. Parameters (DEEP READ)
+                    // We extract parameters directly from Sysex [Offset + 2...]
+                    const paramList = DB[blk.id].models[foundModel];
+                    if(paramList) {
+                        paramList.forEach((p, pIdx) => {
+                            let rawVal = data[blk.b_offset + 2 + pIdx];
+                            if(rawVal !== undefined) {
+                                knobVal[blk.start + pIdx] = rawVal;
+                            }
+                        });
+                    }
                 }
             });
             renderChain();
@@ -329,7 +313,6 @@
     function drag(e, cc) {
         e.preventDefault(); const el = e.target.closest('svg'); el.setPointerCapture(e.pointerId);
         let y = e.clientY; let sv = knobVal[cc] || 64;
-        
         const b = BLOCKS.find(x=>x.id===activeBlk);
         if(midiOut) midiOut.send([0xB0, 49, b.sel]); 
 
@@ -382,11 +365,9 @@
         };
         r.readAsText(f);
     }
-
-    // --- FORCE IMMEDIATE RENDER ON LOAD ---
-    // This fixes the "Invisible Chain/Knobs" issue
-    renderChain();
-    renderStage();
+    
+    // RENDER DEFAULT ON LOAD
+    renderChain(); renderStage();
 
 </script>
 </body>
