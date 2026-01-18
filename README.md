@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX MG-30 FINAL V32</title>
+    <title>NUX MG-30 FINAL V35</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
         
@@ -12,66 +12,90 @@
         body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
         /* HEADER */
-        header { height:40px; background:#080808; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center; padding:0 15px; }
-        .logo { font-weight:900; color:#fff; font-size:14px; letter-spacing:1px; } .logo span { color:var(--gold); }
-        .status { width:10px; height:10px; background:#222; border-radius:50%; box-shadow:0 0 5px #000; transition:0.3s; }
-        .status.on { background:var(--accent); box-shadow:0 0 10px var(--accent); }
-        .status.rx { background:#fff; box-shadow:0 0 10px #fff; }
+        header { height:50px; background:#080808; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center; padding:0 25px; flex-shrink:0; }
+        .logo { font-weight:900; color:#fff; font-size:18px; letter-spacing:1px; } .logo span { color:var(--gold); }
+        .status { width:12px; height:12px; background:#222; border-radius:50%; box-shadow:0 0 5px #000; transition:0.3s; }
+        .status.on { background:var(--accent); box-shadow:0 0 15px var(--accent); }
+        .status.rx { background:#fff; box-shadow:0 0 15px #fff; }
 
-        /* LCD AREA */
-        .top-deck { background:#181818; padding:15px 0; border-bottom:2px solid #2a2a2a; z-index:10; }
-        .lcd-wrap { display:flex; flex-direction:column; align-items:center; }
+        /* LCD AREA (Top Deck) */
+        .top-deck { background:#181818; padding:15px 0; border-bottom:2px solid #2a2a2a; z-index:10; display:flex; flex-direction:column; align-items:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); flex-shrink:0; }
+        
+        /* LCD Screen */
+        .lcd-wrap { display:flex; flex-direction:column; align-items:center; transform:scale(1.0); margin-bottom:10px; }
         
         .lcd { 
-            width:260px; height:80px; background:#000; border:2px solid #333; border-radius:4px; 
+            width:300px; height:80px; background:#000; border:3px solid #333; border-radius:6px; 
             display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; overflow:hidden;
+            box-shadow:inset 0 0 20px rgba(255,255,255,0.05);
         }
-        .p-num { font-family:'JetBrains Mono'; font-size:2.5rem; color:var(--gold); line-height:1; z-index:2; text-shadow:0 0 15px rgba(212,175,55,0.2); }
-        .p-name { font-family:'Inter'; font-size:0.9rem; color:#fff; font-weight:700; text-transform:uppercase; z-index:2; letter-spacing:1px; margin-top:4px; }
-        .lcd-msg { position:absolute; top:5px; right:5px; background:var(--danger); color:#fff; padding:2px 5px; font-size:9px; font-weight:900; display:none; border-radius:3px; }
+        .p-num { font-family:'JetBrains Mono'; font-size:2.5rem; color:var(--gold); line-height:1; z-index:2; text-shadow:0 0 20px rgba(212,175,55,0.3); }
+        .p-name { font-family:'Inter'; font-size:1rem; color:#fff; font-weight:700; text-transform:uppercase; z-index:2; letter-spacing:2px; margin-top:5px; }
+        .lcd-msg { position:absolute; top:6px; right:6px; background:var(--danger); color:#fff; padding:3px 6px; font-size:10px; font-weight:900; display:none; border-radius:3px; }
 
-        .nav-bar { display:flex; gap:10px; width:260px; justify-content:space-between; margin-top:8px; }
-        .btn-nav { background:#252525; border:1px solid #333; color:#888; flex:1; height:32px; border-radius:4px; font-weight:700; cursor:pointer; }
-        .btn-nav:active { background:#333; color:#fff; }
+        .nav-bar { display:flex; gap:10px; width:300px; justify-content:space-between; margin-top:10px; }
+        .btn-nav { background:#252525; border:1px solid #333; color:#888; flex:1; height:36px; border-radius:4px; font-weight:700; cursor:pointer; font-size:12px; transition:0.2s; }
+        .btn-nav:hover { background:#333; color:#fff; border-color:#555; }
+        .btn-nav:active { background:#444; color:#fff; }
 
         /* SIGNAL CHAIN */
-        .chain-strip { height:75px; display:flex; align-items:center; padding:0 15px; gap:5px; overflow-x:auto; margin-top:15px; scrollbar-width:none; }
-        .block { 
-            min-width:55px; height:45px; background:#222; border:1px solid #333; border-radius:3px; 
-            display:flex; flex-direction:column; justify-content:center; align-items:center; 
-            font-size:9px; font-weight:800; color:#555; cursor:pointer; position:relative; transition:0.1s;
+        .chain-strip { 
+            height:80px; display:flex; align-items:center; justify-content:center; 
+            padding:0 20px; gap:8px; width:100%; max-width:100%;
+            overflow-x:auto; margin-top:5px; scrollbar-width:none; 
         }
-        .block.active { background:linear-gradient(180deg, #333, #222); border-color:#444; color:#ccc; }
-        .block.active .b-led { background:var(--accent); box-shadow:0 0 5px var(--accent); opacity:1; }
-        .block.editing { border-color:var(--gold); color:var(--gold); transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.5); }
-        .b-led { width:5px; height:5px; background:#000; border-radius:50%; margin-bottom:3px; border:1px solid #111; opacity:0.3; }
+        .block { 
+            min-width:65px; height:55px; background:#222; border:1px solid #333; border-radius:4px; 
+            display:flex; flex-direction:column; justify-content:center; align-items:center; 
+            font-size:10px; font-weight:800; color:#555; cursor:pointer; position:relative; transition:0.2s;
+        }
+        .block:hover { background:#2a2a2a; }
+        .block.active { background:linear-gradient(180deg, #333, #222); border-color:#555; color:#ddd; }
+        .block.active .b-led { background:var(--accent); box-shadow:0 0 8px var(--accent); opacity:1; }
+        .block.editing { border-color:var(--gold); color:var(--gold); transform:translateY(-4px); box-shadow:0 8px 15px rgba(0,0,0,0.6); z-index:5; }
+        .b-led { width:6px; height:6px; background:#000; border-radius:50%; margin-bottom:5px; border:1px solid #111; opacity:0.3; transition:0.2s; }
 
         /* STAGE */
-        .stage { flex:1; background:#161616; padding:20px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; }
-        .controls-header { width:100%; max-width:800px; margin-bottom:15px; display:flex; justify-content:center; }
-        select { background:#222; color:var(--gold); border:1px solid #333; padding:8px 20px; font-family:'JetBrains Mono'; border-radius:20px; outline:none; font-weight:700; text-transform:uppercase; cursor:pointer; width:100%; max-width:300px; }
+        .stage { flex:1; background:#161616; padding:30px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; width:100%; }
+        
+        .controls-header { width:100%; max-width:1000px; margin-bottom:20px; display:flex; justify-content:center; flex-shrink:0; }
+        select { 
+            background:#222; color:var(--gold); border:2px solid #333; padding:10px 30px; 
+            font-family:'JetBrains Mono'; border-radius:30px; outline:none; font-weight:700; 
+            text-transform:uppercase; cursor:pointer; width:100%; max-width:300px; font-size:14px; 
+            box-shadow:0 5px 15px rgba(0,0,0,0.3); transition:0.2s;
+        }
+        select:hover { border-color:#444; background:#282828; }
 
+        /* CHASSIS - KNOB AREA */
         .chassis { 
-            width:100%; max-width:800px; border-radius:8px; padding:25px; 
-            display:flex; flex-wrap:wrap; justify-content:center; gap:20px; 
+            width:100%; max-width:1200px;
+            border-radius:12px; padding:30px; 
+            display:flex; flex-wrap:wrap; justify-content:center; gap:25px; 
             border:2px solid #333; position:relative; background:#1a1a1a;
+            box-shadow:0 0 50px rgba(0,0,0,0.5);
+            margin-bottom:20px;
         }
         
-        .k-wrap { display:flex; flex-direction:column; align-items:center; width:70px; }
-        svg.knob { width:60px; height:60px; cursor:ns-resize; }
+        .k-wrap { display:flex; flex-direction:column; align-items:center; width:90px; }
+        
+        svg.knob { width:70px; height:70px; cursor:ns-resize; filter:drop-shadow(0 5px 5px rgba(0,0,0,0.5)); transition:transform 0.1s; }
+        svg.knob:active { transform:scale(1.05); }
+        
         .k-val { fill:none; stroke:var(--gold); stroke-width:6; stroke-linecap:round; }
-        .k-num { font-family:'JetBrains Mono'; font-size:12px; font-weight:700; color:rgba(255,255,255,0.9); margin-bottom:3px; }
-        .k-lbl { font-size:9px; font-weight:900; color:rgba(255,255,255,0.6); text-transform:uppercase; text-align:center; }
+        .k-num { font-family:'JetBrains Mono'; font-size:14px; font-weight:700; color:rgba(255,255,255,0.9); margin-bottom:5px; margin-top:5px; }
+        .k-lbl { font-size:11px; font-weight:900; color:rgba(255,255,255,0.5); text-transform:uppercase; text-align:center; letter-spacing:1px; }
 
-        footer { height:50px; background:#080808; border-top:1px solid #333; display:flex; gap:10px; padding:0 15px; align-items:center; }
-        .btn-act { flex:1; height:34px; background:#1a1a1a; border:1px solid #333; color:#aaa; font-size:10px; font-weight:900; border-radius:4px; cursor:pointer; }
+        footer { height:60px; background:#080808; border-top:1px solid #333; display:flex; gap:15px; padding:0 25px; align-items:center; justify-content:center; flex-shrink:0; }
+        .btn-act { width:140px; height:40px; background:#1a1a1a; border:1px solid #333; color:#aaa; font-size:11px; font-weight:900; border-radius:6px; cursor:pointer; letter-spacing:1px; transition:0.2s; }
+        .btn-act:hover { background:#252525; color:#fff; border-color:#555; }
         .btn-green { color:var(--accent); background:rgba(0,230,118,0.05); border-color:rgba(0,230,118,0.2); }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">NUX <span>PRO V32</span></div>
+        <div class="logo">NUX <span>PRO V35</span></div>
         <div class="status" id="led"></div>
     </header>
 
@@ -119,8 +143,6 @@
         'IR': { type:'pedal', models:{'Cab':['LO','HI','LVL'] }}
     };
 
-    // --- 2. CONFIG: CORRECTED ORDER & MAPPING ---
-    // Order: WAH -> GATE -> CMP -> EFX -> AMP -> IR -> EQ -> MOD -> DLY -> RVB
     const BLOCKS = [
         { id:'WAH', cc:9,  sel:1,  start:10, b_offset: 12 }, 
         { id:'GATE',cc:39, sel:3,  start:40, b_offset: 60 },
@@ -139,22 +161,18 @@
     let midiOut=null, patchId=0, activeBlk='AMP';
     let blkState={}, knobVal={}, currentModels={};
 
-    // --- 3. INIT ---
     function init() {
         if(!navigator.requestMIDIAccess) return;
         navigator.requestMIDIAccess({sysex:true}).then(acc => {
             const outs = Array.from(acc.outputs.values());
             midiOut = outs.find(o => o.name.includes("MG-30") || o.name.includes("NUX")) || outs[0];
-            
             if(midiOut) {
                 document.getElementById('led').className='status on';
                 document.getElementById('offMsg').style.display='none';
-                midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]); // Handshake
-
+                midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]); 
                 const ins = Array.from(acc.inputs.values());
                 const inp = ins.find(i => i.name.includes("MG-30") || i.name.includes("NUX")) || ins[0];
                 if(inp) inp.onmidimessage = handle;
-                
                 acc.onstatechange = e => { if(e.port.state==='disconnected') setOffline(); };
             } else { setOffline(); }
         });
@@ -166,26 +184,20 @@
         document.getElementById('lcdName').innerText="DISCONNECTED";
     }
 
-    // --- 4. MIDI HANDLER (FIXED) ---
     function handle(e) {
         const [s, d1, d2] = e.data;
         const cmd = s & 0xF0;
 
-        // Visual RX blink
         const led = document.getElementById('led');
         led.classList.add('rx'); setTimeout(() => led.classList.remove('rx'), 100);
 
-        // A. CONTROL CHANGE
         if(cmd === 0xB0) {
-            // 1. Bypass Sync (Green Light)
             const blk = BLOCKS.find(b => b.cc === d1);
             if(blk) { 
-                blkState[blk.id] = d2 > 63; 
+                blkState[blk.id] = d2 > 0; 
                 renderChain(); 
                 return;
             } 
-            
-            // 2. Selection Sync (Yellow Box) - CC 49
             if(d1 === 49) {
                 const selBlk = BLOCKS.find(b => b.sel === d2);
                 if(selBlk) {
@@ -195,13 +207,10 @@
                 }
                 return;
             }
-
-            // 3. Knobs
             knobVal[d1] = d2; 
             updateKnobUI(d1, d2); 
         }
 
-        // B. PATCH CHANGE
         if(cmd === 0xC0) {
             patchId = d1;
             knobVal = {}; 
@@ -209,7 +218,6 @@
             if(midiOut) midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
         }
 
-        // C. SYSEX DUMP
         if(s === 0xF0) {
             const data = e.data;
             let nameBuffer = "";
@@ -224,13 +232,15 @@
                     let idx = data[blk.b_offset];
                     const avail = Object.keys(DB[blk.id].models);
                     if(avail[idx % avail.length]) currentModels[blk.id] = avail[idx % avail.length];
+                    let statusByte = data[blk.b_offset + 1];
+                    blkState[blk.id] = statusByte > 0; 
                 }
             });
+            renderChain();
             renderStage();
         }
     }
 
-    // --- 5. RENDER LOGIC ---
     function updateLCD() {
         let b = Math.floor(patchId/4)+1, s = ['A','B','C','D'][patchId%4];
         document.getElementById('lcdNum').innerText = (b<10?'0':'')+b+s;
@@ -238,7 +248,6 @@
 
     function renderChain() {
         const c = document.getElementById('chainUI'); c.innerHTML='';
-        // Renders in order of BLOCKS array (Wah -> Gate -> Comp...)
         BLOCKS.forEach(b => {
             let isOn = blkState[b.id] === true;
             let div = document.createElement('div');
@@ -248,7 +257,7 @@
                 if(activeBlk === b.id) { toggleBypass(b); } 
                 else {
                     activeBlk = b.id;
-                    if(midiOut) midiOut.send([0xB0, 49, b.sel]); // Send Select
+                    if(midiOut) midiOut.send([0xB0, 49, b.sel]); 
                     renderChain(); renderStage();
                 }
             };
@@ -259,7 +268,7 @@
     function toggleBypass(b) {
         let newState = !blkState[b.id];
         blkState[b.id] = newState;
-        if(midiOut) midiOut.send([0xB0, b.cc, newState ? 127 : 0]); // Send Single CC
+        if(midiOut) midiOut.send([0xB0, b.cc, newState ? 127 : 0]); 
         renderChain();
     }
 
@@ -322,7 +331,7 @@
         let y = e.clientY; let sv = knobVal[cc] || 64;
         
         const b = BLOCKS.find(x=>x.id===activeBlk);
-        if(midiOut) midiOut.send([0xB0, 49, b.sel]); // Ensure selected
+        if(midiOut) midiOut.send([0xB0, 49, b.sel]); 
 
         const move = ev => {
             let d = y - ev.clientY;
@@ -373,6 +382,12 @@
         };
         r.readAsText(f);
     }
+
+    // --- FORCE IMMEDIATE RENDER ON LOAD ---
+    // This fixes the "Invisible Chain/Knobs" issue
+    renderChain();
+    renderStage();
+
 </script>
 </body>
 </html>
