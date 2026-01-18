@@ -10,11 +10,25 @@
 
         :root { --bg:#050505; --panel:#111; --gold:#D4AF37; --text:#eee; --border:1px solid #333; }
         
-        /* GLOBAL RESET - BUT ALLOW SCROLLING BY DEFAULT */
         * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
         
-        /* PREVENT SCROLL ONLY ON BODY TO STOP BOUNCE */
         body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; touch-action:none; }
+
+        /* --- STARTUP SCREEN --- */
+        #startup { 
+            position: fixed; inset: 0; background: #000; z-index: 10000; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            text-align: center; padding: 20px;
+        }
+        .warn-icon { font-size: 40px; margin-bottom: 20px; color: var(--gold); }
+        .warn-title { font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 10px; letter-spacing: 1px; }
+        .warn-text { color: #888; font-size: 14px; max-width: 400px; line-height: 1.5; margin-bottom: 30px; }
+        .btn-enter { 
+            background: var(--gold); color: #000; border: none; padding: 15px 40px; 
+            font-size: 16px; font-weight: 800; border-radius: 50px; cursor: pointer; 
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3); transition: 0.2s;
+        }
+        .btn-enter:active { transform: scale(0.95); box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
 
         /* HEADER */
         header { height:60px; background:#0c0c0c; border-bottom:var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 20px; z-index:100; }
@@ -34,14 +48,14 @@
         .nav-btn { background:#1a1a1a; border:1px solid #333; color:#888; width:65px; height:36px; border-radius:4px; cursor:pointer; transition:0.2s; font-weight:700; font-size:18px; display:grid; place-items:center; }
         .nav-btn:hover { background:#222; color:#fff; border-color:#555; } .nav-btn:active { background:var(--gold); color:#000; }
 
-        /* CHAIN STRIP - ALLOW HORIZONTAL SCROLL */
+        /* CHAIN STRIP */
         .chain-strip { height:75px; background:#141414; border-bottom:var(--border); display:flex; align-items:center; padding:0 25px; gap:8px; overflow-x:auto; touch-action: pan-x; }
         .chain-strip::-webkit-scrollbar { display:none; }
         .pedal { min-width:62px; height:42px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:4px; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:700; color:#666; cursor:pointer; transition:0.1s; }
         .pedal.selected { border:1px solid #fff; background:#333; color:#fff; transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.5); }
         .pedal.on { border-color:rgba(212, 175, 55, 0.5); color:var(--gold); background:linear-gradient(180deg, #221e0f, #111); }
 
-        /* KNOB STAGE - LOCK SCROLLING HERE TO ALLOW DRAGGING */
+        /* KNOB STAGE */
         .stage { flex:1; background:#0a0a0a; padding:30px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; touch-action: none; }
         .model-list { margin-bottom:30px; padding:10px 20px; background:#111; color:var(--gold); border:1px solid #333; border-radius:6px; font-family:'JetBrains Mono'; font-size:13px; outline:none; cursor:pointer; min-width: 250px; text-align:center; }
         .knob-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(85px, 1fr)); gap:25px; width:100%; max-width:900px; }
@@ -67,11 +81,10 @@
         .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #222; }
         .modal-title { color:#fff; font-weight:900; letter-spacing:1px; margin:0; }
         
-        /* CRITICAL: ENABLE VERTICAL SCROLLING HERE */
         .slot-grid { 
             display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex:1; 
             overflow-y:auto; padding-right:5px;
-            touch-action: pan-y; /* FIX: Allows scrolling */
+            touch-action: pan-y; /* ENABLE SCROLL */
         }
         
         .slot { background:#1a1a1a; padding:15px; text-align:center; border:1px solid #2a2a2a; color:#666; font-family:'JetBrains Mono'; font-size:11px; cursor:pointer; display:flex; flex-direction:column; gap:4px; border-radius:4px; }
@@ -84,6 +97,16 @@
     </style>
 </head>
 <body>
+
+    <div id="startup">
+        <div class="warn-icon">⚠️</div>
+        <div class="warn-title">DESKTOP MODE REQUIRED</div>
+        <div class="warn-text">
+            For the best experience, please ensure your browser is set to "Desktop Site" mode.<br><br>
+            If using Android/iOS, open browser settings and check "Desktop Site".
+        </div>
+        <button class="btn-enter" onclick="closeStartup()">ENTER EDITOR</button>
+    </div>
 
     <div id="modal" class="overlay">
         <div class="modal-box">
@@ -99,7 +122,7 @@
     </div>
 
     <header>
-        <div class="logo">NUX <span>v5.0.2</span></div>
+        <div class="logo">NUX <span>PRO</span></div>
         <div class="status-led" id="led"></div>
     </header>
 
@@ -144,97 +167,45 @@
     <input type="file" id="fileInput" hidden onchange="fileHandler(this)">
 
     <script>
-        // ===========================================
-        // 1. NUX MG-30 v5.0.2 FULL DATABASE
-        // ===========================================
+        // --- 1. FULL DB (v5.0.2) ---
         const DB = {
-            'WAH': {
-                'Clyde':[{n:'POS',cc:10}], 'Cry BB':[{n:'POS',cc:10}], 'V847':[{n:'POS',cc:10}], 'Horse Wah':[{n:'POS',cc:10}], 'Octave Shift':[{n:'POS',cc:10}]
-            },
-            'CMP': {
-                'Rose':[{n:'SUST',cc:15},{n:'LVL',cc:16}], 'K Comp':[{n:'SUST',cc:15},{n:'LVL',cc:16},{n:'CLIP',cc:17}], 'Studio':[{n:'THR',cc:15},{n:'RAT',cc:16},{n:'GAIN',cc:17},{n:'ATT',cc:18}]
-            },
+            'WAH': { 'Clyde':[{n:'POS',cc:10}], 'Cry BB':[{n:'POS',cc:10}], 'V847':[{n:'POS',cc:10}], 'Horse Wah':[{n:'POS',cc:10}], 'Octave Shift':[{n:'POS',cc:10}] },
+            'CMP': { 'Rose':[{n:'SUST',cc:15},{n:'LVL',cc:16}], 'K Comp':[{n:'SUST',cc:15},{n:'LVL',cc:16},{n:'CLIP',cc:17}], 'Studio':[{n:'THR',cc:15},{n:'RAT',cc:16},{n:'GAIN',cc:17},{n:'ATT',cc:18}] },
             'NR': { 'Noise Reduc':[{n:'THR',cc:40},{n:'DEC',cc:41}] },
-            'EFX': {
-                'Dist+':[{n:'DST',cc:20},{n:'OUT',cc:22}], 'RC Boost':[{n:'GAIN',cc:20},{n:'VOL',cc:21},{n:'BASS',cc:22},{n:'TRB',cc:23}], 'AC Boost':[{n:'GAIN',cc:20},{n:'VOL',cc:21},{n:'BASS',cc:22},{n:'TRB',cc:23}],
-                'Dist One':[{n:'DST',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'T Scream':[{n:'DRV',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Blues Drv':[{n:'GAIN',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}],
-                'Morning Drv':[{n:'VOL',cc:20},{n:'DRV',cc:21},{n:'TON',cc:22}], 'EAT':[{n:'DRV',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Red Dirt':[{n:'DRV',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}],
-                'Crunch':[{n:'GAIN',cc:20},{n:'VOL',cc:21},{n:'PRES',cc:22}], 'Muff Fuzz':[{n:'SUST',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Katana':[{n:'BST',cc:20},{n:'VOL',cc:21}],
-                'Red Fuzz':[{n:'FUZZ',cc:20},{n:'LVL',cc:21}], 'Touch Wah':[{n:'SENS',cc:20},{n:'RES',cc:21},{n:'DEC',cc:22}]
-            },
-            'AMP': { 
-                'Jazz Clean':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
-                'Deluxe Rvb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
-                'Bassman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Recto Dual':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Diezel VH4':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}],
-                'AC30 Top':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
-                'Plexi 100':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Brit 800':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Soldano':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Friedman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Uber':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Diezel Herbert':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}],
-                'Fireman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'Vibroverb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
-                'Dr. Z':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}],
-                'Dual Rect':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}],
-                'AGL':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
-                'MLD':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}],
-                'Starlift':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}]
-            },
+            'EFX': { 'Dist+':[{n:'DST',cc:20},{n:'OUT',cc:22}], 'RC Boost':[{n:'GAIN',cc:20},{n:'VOL',cc:21},{n:'BASS',cc:22},{n:'TRB',cc:23}], 'AC Boost':[{n:'GAIN',cc:20},{n:'VOL',cc:21},{n:'BASS',cc:22},{n:'TRB',cc:23}], 'Dist One':[{n:'DST',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'T Scream':[{n:'DRV',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Blues Drv':[{n:'GAIN',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Morning Drv':[{n:'VOL',cc:20},{n:'DRV',cc:21},{n:'TON',cc:22}], 'EAT':[{n:'DRV',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Red Dirt':[{n:'DRV',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Crunch':[{n:'GAIN',cc:20},{n:'VOL',cc:21},{n:'PRES',cc:22}], 'Muff Fuzz':[{n:'SUST',cc:20},{n:'TON',cc:21},{n:'LVL',cc:22}], 'Katana':[{n:'BST',cc:20},{n:'VOL',cc:21}], 'Red Fuzz':[{n:'FUZZ',cc:20},{n:'LVL',cc:21}], 'Touch Wah':[{n:'SENS',cc:20},{n:'RES',cc:21},{n:'DEC',cc:22}] },
+            'AMP': { 'Jazz Clean':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}], 'Deluxe Rvb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}], 'Bassman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'Recto Dual':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'Diezel VH4':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}], 'AC30 Top':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}], 'Plexi 100':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'Brit 800':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'Soldano':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'Friedman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'Uber':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'Diezel Herbert':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'DEP',cc:36}], 'Fireman':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'Vibroverb':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}], 'Dr. Z':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'CUT',cc:33},{n:'TRB',cc:34}], 'Dual Rect':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34},{n:'PRS',cc:35}], 'AGL':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}], 'MLD':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}], 'Starlift':[{n:'GAIN',cc:30},{n:'MST',cc:31},{n:'BAS',cc:32},{n:'MID',cc:33},{n:'TRB',cc:34}] },
             'EQ': { '6-Band':[{n:'100',cc:45},{n:'200',cc:46},{n:'400',cc:47},{n:'800',cc:48},{n:'1.6K',cc:49},{n:'3.2K',cc:50}], 'Align':[{n:'GAIN',cc:45},{n:'FREQ',cc:46},{n:'Q',cc:47}], '10-Band':[{n:'31',cc:45},{n:'63',cc:46},{n:'125',cc:47},{n:'250',cc:48},{n:'500',cc:49},{n:'1K',cc:50},{n:'2K',cc:51},{n:'4K',cc:52},{n:'8K',cc:53},{n:'16K',cc:54}], 'Para':[{n:'FREQ',cc:45},{n:'GAIN',cc:46},{n:'Q',cc:47}] },
-            'MOD': {
-                'CE-1':[{n:'CHO',cc:60},{n:'VIB',cc:61}], 'CE-2':[{n:'RT',cc:60},{n:'DP',cc:61}], 'ST Chorus':[{n:'RT',cc:60},{n:'DP',cc:61},{n:'LVL',cc:62}], 'Vibrator':[{n:'RT',cc:60},{n:'DP',cc:61}],
-                'Detune':[{n:'MIX',cc:60},{n:'PIT',cc:61},{n:'LVL',cc:62}], 'Flanger':[{n:'RT',cc:60},{n:'DP',cc:61},{n:'FB',cc:62},{n:'MIX',cc:63}], 'Phase 90':[{n:'SPD',cc:60}],
-                'Phase 100':[{n:'SPD',cc:60},{n:'INT',cc:61}], 'S.C.F':[{n:'SPD',cc:60},{n:'WID',cc:61},{n:'INT',cc:62}], 'U-Vibe':[{n:'RT',cc:60},{n:'DP',cc:61},{n:'MOD',cc:62}],
-                'Tremolo':[{n:'RT',cc:60},{n:'DP',cc:61}], 'Rotary':[{n:'SPD',cc:60},{n:'BAL',cc:61}], 'Harmonist':[{n:'MST',cc:60},{n:'KEY',cc:61},{n:'INT',cc:62}]
-            },
-            'DLY': {
-                'Analog':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Digital':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Modulation':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}],
-                'Tape':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Reverse':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Pan':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}],
-                'Duotime':[{n:'TM1',cc:70},{n:'TM2',cc:71},{n:'FB',cc:72},{n:'MX',cc:73}], 'Phi':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}]
-            },
+            'MOD': { 'CE-1':[{n:'CHO',cc:60},{n:'VIB',cc:61}], 'CE-2':[{n:'RT',cc:60},{n:'DP',cc:61}], 'ST Chorus':[{n:'RT',cc:60},{n:'DP',cc:61},{n:'LVL',cc:62}], 'Vibrator':[{n:'RT',cc:60},{n:'DP',cc:61}], 'Detune':[{n:'MIX',cc:60},{n:'PIT',cc:61},{n:'LVL',cc:62}], 'Flanger':[{n:'RT',cc:60},{n:'DP',cc:61},{n:'FB',cc:62},{n:'MIX',cc:63}], 'Phase 90':[{n:'SPD',cc:60}], 'Phase 100':[{n:'SPD',cc:60},{n:'INT',cc:61}], 'S.C.F':[{n:'SPD',cc:60},{n:'WID',cc:61},{n:'INT',cc:62}], 'U-Vibe':[{n:'RT',cc:60},{n:'DP',cc:61},{n:'MOD',cc:62}], 'Tremolo':[{n:'RT',cc:60},{n:'DP',cc:61}], 'Rotary':[{n:'SPD',cc:60},{n:'BAL',cc:61}], 'Harmonist':[{n:'MST',cc:60},{n:'KEY',cc:61},{n:'INT',cc:62}] },
+            'DLY': { 'Analog':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Digital':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Modulation':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Tape':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Reverse':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Pan':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}], 'Duotime':[{n:'TM1',cc:70},{n:'TM2',cc:71},{n:'FB',cc:72},{n:'MX',cc:73}], 'Phi':[{n:'TM',cc:70},{n:'FB',cc:71},{n:'MX',cc:72}] },
             'RVB': { 'Room':[{n:'DEC',cc:80},{n:'MX',cc:82}], 'Hall':[{n:'DEC',cc:80},{n:'MX',cc:82}], 'Plate':[{n:'DEC',cc:80},{n:'MX',cc:82}], 'Spring':[{n:'DEC',cc:80},{n:'MX',cc:82}], 'Shimmer':[{n:'DEC',cc:80},{n:'MX',cc:82},{n:'PIT',cc:83}] },
-            'IR':  { 'Cab':[{n:'LC',cc:91},{n:'HC',cc:92},{n:'LV',cc:93}] }
+            'IR': { 'Cab':[{n:'LC',cc:91},{n:'HC',cc:92},{n:'LV',cc:93}] }
         };
 
-        // ===========================================
-        // 2. STATE & INIT
-        // ===========================================
+        // --- 2. STATE ---
         let midiOut = null;
         let curPatch = 0;
         let actBlock = 'AMP';
         let selSlot = 0;
-        let waitingForExport = false;
+        let waitExport = false;
         let scanMode = false;
         let scanIndex = 0;
 
-        // Auto-run when DOM is ready
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log("System Ready");
+        // --- 3. STARTUP ---
+        function closeStartup() {
+            document.getElementById('startup').style.display = 'none';
+            // Init Engine
             setBlock('AMP');
             makeGrid();
-        });
+        }
 
-        // ===========================================
-        // 3. UI LOGIC
-        // ===========================================
+        // --- 4. UI ---
         function setBlock(blk) {
             actBlock = blk;
             document.querySelectorAll('.pedal').forEach(e => e.classList.remove('selected'));
             document.getElementById('b-'+blk).classList.add('selected');
-
-            const sel = document.getElementById('models');
-            sel.innerHTML = "";
-            const models = Object.keys(DB[blk] || {});
-            
-            if(models.length > 0) {
-                models.forEach(m => sel.appendChild(new Option(m, m)));
-                sel.disabled = false;
-            } else {
-                sel.appendChild(new Option("NO MODELS")); sel.disabled = true;
-            }
+            const s = document.getElementById('models');
+            s.innerHTML = '';
+            Object.keys(DB[blk]).forEach(m => s.appendChild(new Option(m,m)));
             drawKnobs();
         }
 
@@ -243,7 +214,6 @@
             area.innerHTML = '';
             const mod = document.getElementById('models').value;
             const params = DB[actBlock][mod] || [];
-
             params.forEach(p => {
                 let div = document.createElement('div');
                 div.className = 'knob-wrapper';
@@ -260,46 +230,37 @@
             });
         }
 
-        // ===========================================
-        // 4. KNOB ENGINE (0-100 Scaling)
-        // ===========================================
+        // --- 5. KNOBS ---
         let isDrag=false, dy=0, dval=50, dcc=0;
-        
         function dragKnob(e, cc) {
             e.preventDefault(); e.target.setPointerCapture(e.pointerId);
             isDrag=true; dy=e.clientY; dcc=cc;
-            dval = parseInt(document.getElementById('val-'+cc).innerText);
+            dval=parseInt(document.getElementById('val-'+cc).innerText);
             
             e.target.onpointermove = (ev) => {
                 if(!isDrag) return;
                 let diff = dy - ev.clientY;
-                dval = Math.max(0, Math.min(100, dval + diff)); // 0-100 UI Limit
+                dval = Math.max(0, Math.min(100, dval + diff));
                 
-                // Draw UI
+                // UI Update
                 let pct = dval/100;
-                let off = 200 - (pct*200);
-                let ang = -135 + (pct*270);
-                
                 let arc = document.getElementById('arc-'+dcc);
-                let ptr = document.getElementById('ptr-'+dcc);
-                let txt = document.getElementById('val-'+dcc);
+                if(arc) {
+                    arc.style.strokeDashoffset = 200 - (pct*200);
+                    document.getElementById('ptr-'+dcc).setAttribute('transform', `rotate(${-135+(pct*270)} 50 50)`);
+                    document.getElementById('val-'+dcc).innerText = dval;
+                }
                 
-                if(arc) arc.style.strokeDashoffset = off;
-                if(ptr) ptr.setAttribute('transform', `rotate(${ang} 50 50)`);
-                if(txt) txt.innerText = dval;
-                
-                // Send MIDI (Scale 0-100 -> 0-127)
-                if(midiOut) midiOut.send([0xB0, dcc, Math.floor(dval * 1.27)]);
+                // MIDI Update
+                if(midiOut) midiOut.send([0xB0, dcc, Math.floor(dval*1.27)]);
                 dy = ev.clientY;
             };
             e.target.onpointerup = (ev) => { isDrag=false; e.target.onpointermove=null; e.target.releasePointerCapture(ev.pointerId); };
         }
 
-        // ===========================================
-        // 5. MIDI CORE
-        // ===========================================
+        // --- 6. MIDI ---
         function initUSB() {
-            if(!navigator.requestMIDIAccess) return alert("Use Chrome");
+            if(!navigator.requestMIDIAccess) return alert("Use Chrome/Edge!");
             navigator.requestMIDIAccess({sysex:true}).then(m => {
                 let out = Array.from(m.outputs.values()).find(o => o.name.includes("NUX")) || Array.from(m.outputs.values())[0];
                 let inp = Array.from(m.inputs.values()).find(i => i.name.includes("NUX")) || Array.from(m.inputs.values())[0];
@@ -313,7 +274,7 @@
                     document.getElementById('usb-state').style.color = "#00E676";
                     midiOut.send([0xC0, curPatch]);
                     setTimeout(askDump, 100);
-                } else alert("Not Found");
+                } else alert("NUX MG-30 Not Found");
             });
         }
 
@@ -321,25 +282,18 @@
 
         function handleMsg(e) {
             let d = e.data;
-            if (waitingForExport && d[0]===0xF0 && d.length>60) {
+            if(waitExport && d[0]===0xF0 && d.length>60) {
                 let n = document.getElementById('lcd-name').innerText.trim();
                 saveBlob(d, n+".mg30patch");
-                waitingForExport = false;
-                alert("Exported!");
-                return;
+                waitExport=false; return;
             }
-            if((d[0]&0xF0)===0xC0) {
-                curPatch = d[1];
-                updScreen();
-                setTimeout(askDump, 50);
-            }
+            if((d[0]&0xF0)===0xC0) { curPatch=d[1]; updScreen(); setTimeout(askDump,50); }
             if(d[0]===0xF0 && d.length>20) {
                 if(scanMode) {
-                    let name = parseName(d);
+                    let n = parseName(d);
                     let el = document.getElementById('s-'+scanIndex);
-                    if(el) el.innerHTML = `<strong>${(scanIndex+1)+getSub(scanIndex)}</strong><br>${name}`;
-                    scanIndex++;
-                    scanNext();
+                    if(el) el.innerHTML = `<strong>${(scanIndex+1)+getSub(scanIndex)}</strong><br>${n}`;
+                    scanIndex++; scanNext();
                 } else {
                     document.getElementById('lcd-name').innerText = parseName(d);
                 }
@@ -347,7 +301,7 @@
         }
 
         function parseName(d) {
-            let s = ""; let found = false;
+            let s=""; let found=false;
             for(let i=10; i<d.length-5; i++) {
                 if(d[i]>=32 && d[i]<=126) { s+=String.fromCharCode(d[i]); found=true; }
                 else if(found) break; 
@@ -355,26 +309,21 @@
             return s.length>0 ? s : "PATCH";
         }
 
-        // ===========================================
-        // 6. FEATURES
-        // ===========================================
-        function nav(dir) {
-            curPatch += dir;
-            if(curPatch>127) curPatch=0; if(curPatch<0) curPatch=127;
+        // --- 7. NAV & FILE ---
+        function nav(d) {
+            curPatch+=d; if(curPatch>127) curPatch=0; if(curPatch<0) curPatch=127;
             updScreen();
-            if(midiOut) { midiOut.send([0xC0, curPatch]); setTimeout(askDump, 100); }
+            if(midiOut) { midiOut.send([0xC0, curPatch]); setTimeout(askDump,100); }
         }
-
         function updScreen() {
             let b = Math.floor(curPatch/4)+1;
             let s = ['A','B','C','D'][curPatch%4];
             document.getElementById('lcd-num').innerText = (b<10?'0'+b:b)+s;
         }
-        
         function getSub(i) { return ['A','B','C','D'][i%4]; }
 
-        function openModal() { document.getElementById('modal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        function openModal() { document.getElementById('modal').style.display='flex'; }
+        function closeModal() { document.getElementById('modal').style.display='none'; }
 
         function makeGrid() {
             const g = document.getElementById('grid');
@@ -397,7 +346,7 @@
             r.onload = (e) => {
                 let dat = new Uint8Array(e.target.result);
                 if(midiOut) {
-                    if(confirm("Overwrite?")) {
+                    if(confirm("Overwrite slot?")) {
                         midiOut.send([0xC0, selSlot]);
                         setTimeout(()=>{ midiOut.send(dat); curPatch=selSlot; updScreen(); setTimeout(askDump,200); }, 150);
                     }
@@ -410,8 +359,7 @@
 
         function doExport() {
             if(!midiOut) return alert("Connect First");
-            alert("Capturing Data... (Check Console for Dump)");
-            askDump();
+            if(confirm("Download?")) { waitExport=true; askDump(); }
         }
 
         function saveBlob(d, n) {
@@ -422,22 +370,17 @@
         }
 
         function scanNames() {
-            if(!midiOut) return alert("Connect USB");
-            scanMode = true; scanIndex = 0;
-            alert("Scanning... Please wait 20s");
+            if(!midiOut) return alert("Connect First");
+            scanMode=true; scanIndex=0;
+            alert("Scanning...");
             scanNext();
         }
 
         function scanNext() {
-            if(scanIndex > 127) {
-                scanMode = false;
-                midiOut.send([0xC0, curPatch]);
-                return;
-            }
+            if(scanIndex > 127) { scanMode=false; midiOut.send([0xC0, curPatch]); return; }
             midiOut.send([0xC0, scanIndex]);
             setTimeout(askDump, 150);
         }
-
     </script>
 </body>
 </html>
