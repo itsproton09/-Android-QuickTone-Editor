@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX MG-30 ULTIMATE V42</title>
+    <title>NUX MG-30 FINAL V45 (NAME SEARCHER)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
         
@@ -89,7 +89,7 @@
 <body>
 
     <header>
-        <div class="logo">NUX <span>EDITOR V42</span></div>
+        <div class="logo">NUX <span>EDITOR V45</span></div>
         <div class="status-light" id="connStatus"></div>
     </header>
 
@@ -119,23 +119,23 @@
 
 <script>
     // ==========================================
-    // 1. CONFIGURATION & DATABASE
+    // 1. CONFIGURATION
     // ==========================================
     
     // FINAL ORDER: WAH, CMP, GATE, EFX, AMP, IR, EQ, MOD, DLY, RVB
     const CHAIN_ORDER = ['WAH', 'CMP', 'GATE', 'EFX', 'AMP', 'IR', 'EQ', 'MOD', 'DLY', 'RVB'];
     
     const BLOCKS = {
-        'WAH': { cc:9,  sel:1,  start:10 },
-        'CMP': { cc:14, sel:2,  start:15 },
-        'GATE':{ cc:39, sel:3,  start:40 },
-        'EFX': { cc:19, sel:4,  start:20 },
-        'AMP': { cc:29, sel:5,  start:30 },
-        'EQ':  { cc:44, sel:6,  start:45 },
-        'MOD': { cc:59, sel:7,  start:60 },
-        'DLY': { cc:69, sel:8,  start:70 },
-        'RVB': { cc:79, sel:9,  start:80 },
-        'IR':  { cc:89, sel:10, start:90 }
+        'WAH': { cc:9,  sel:1,  start:10, b_offset: 12 }, 
+        'CMP': { cc:14, sel:2,  start:15, b_offset: 20 },
+        'GATE':{ cc:39, sel:3,  start:40, b_offset: 60 },
+        'EFX': { cc:19, sel:4,  start:20, b_offset: 24 },
+        'AMP': { cc:29, sel:5,  start:30, b_offset: 32 }, 
+        'EQ':  { cc:44, sel:6,  start:45, b_offset: 40 },
+        'MOD': { cc:59, sel:7,  start:60, b_offset: 48 }, 
+        'DLY': { cc:69, sel:8,  start:70, b_offset: 56 },
+        'RVB': { cc:79, sel:9,  start:80, b_offset: 64 }, 
+        'IR':  { cc:89, sel:10, start:90, b_offset: 72 }
     };
 
     const DB = {
@@ -154,17 +154,13 @@
     let midiOut = null;
     let currentPatchID = 0;
     let currentEditBlock = 'AMP';
-    
     let stateBypass = {}; 
     let stateKnobs = {}; 
     let stateModels = {}; 
 
-    // ==========================================
-    // 2. MIDI ENGINE & SYSEX DECODER
-    // ==========================================
-    
+    // --- 2. MIDI ENGINE ---
     function startMidi() {
-        if (!navigator.requestMIDIAccess) return alert("WebMIDI not supported in this browser.");
+        if (!navigator.requestMIDIAccess) return alert("WebMIDI not supported");
         navigator.requestMIDIAccess({ sysex: true }).then(access => {
             const outputs = Array.from(access.outputs.values());
             midiOut = outputs.find(o => o.name.toUpperCase().includes("NUX") || o.name.toUpperCase().includes("MG")) || outputs[0];
@@ -172,19 +168,12 @@
             if(midiOut) {
                 document.getElementById('connStatus').className = 'status-light connected';
                 document.getElementById('pName').innerText = "LINKED!";
-                
                 const inputs = Array.from(access.inputs.values());
                 const inp = inputs.find(i => i.name.toUpperCase().includes("NUX") || i.name.toUpperCase().includes("MG")) || inputs[0];
                 if(inp) inp.onmidimessage = onMidiMsg;
-
-                // Force Editor Mode
-                midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
-                
-                // Request Data
+                midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]); // Handshake
                 setTimeout(() => changePatch(0), 500); 
-            } else {
-                alert("No NUX Device Found!");
-            }
+            } else { alert("No NUX Device Found!"); }
         });
     }
 
@@ -195,14 +184,13 @@
         const led = document.getElementById('connStatus');
         led.classList.add('rx'); setTimeout(() => led.classList.remove('rx'), 50);
 
-        // --- A. CC MESSAGES ---
+        // A. OMNI-CHANNEL LISTENER (Fixes "Missing" Buttons)
         if (cmd === 0xB0) {
             // Check Bypass
             for (let id in BLOCKS) {
                 if (BLOCKS[id].cc === d1) {
                     stateBypass[id] = d2 > 0;
-                    renderChain();
-                    return;
+                    renderChain(); return;
                 }
             }
             // Check Selection
@@ -220,45 +208,75 @@
             updateKnobVisual(d1, d2);
         }
 
-        // --- B. PC MESSAGES ---
+        // B. PATCH CHANGE
         if (cmd === 0xC0) {
             currentPatchID = d1;
             renderPatchNum();
             if(midiOut) midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
         }
 
-        // --- C. SYSEX ---
+        // C. SHERLOCK SCANNER (Auto-Finds Name)
         if (status === 0xF0) {
             parseSysex(e.data);
         }
     }
 
     function parseSysex(raw) {
-        // 1. EXTRACT NAME (Smart Scan)
-        let str = "", bestStr = "";
+        // 1. SHERLOCK: Find the Name
+        let currentStr = "";
+        let foundStrings = [];
         for(let i=0; i<raw.length; i++) {
             let c = raw[i];
-            if(c >= 32 && c <= 126) str += String.fromCharCode(c);
-            else {
-                if(str.length > 3 && str.length > bestStr.length) bestStr = str;
-                str = "";
+            if ((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 32 || c === 45) {
+                currentStr += String.fromCharCode(c);
+            } else {
+                if(currentStr.length > 3) foundStrings.push(currentStr);
+                currentStr = "";
             }
         }
-        if(bestStr.length > 0) document.getElementById('pName').innerText = bestStr;
+        
+        // Pick longest string as name (Heuristic)
+        if(foundStrings.length > 0) {
+            foundStrings.sort((a,b) => b.length - a.length);
+            document.getElementById('pName').innerText = foundStrings[0];
+        }
 
-        // 2. TRIGGER REFRESH (Visual Sync)
+        // 2. EXTRACT DEEP DATA (Green Lights)
+        for (let id in BLOCKS) {
+            let blk = BLOCKS[id];
+            
+            // Safety Check: Is data long enough?
+            if (raw.length > blk.b_offset + 5) {
+                // A. Status
+                let statusByte = raw[blk.b_offset + 1];
+                stateBypass[id] = statusByte > 0;
+
+                // B. Model
+                let modelIdx = raw[blk.b_offset];
+                const availModels = Object.keys(DB[id].models);
+                const foundModel = availModels[modelIdx % availModels.length] || availModels[0];
+                stateModels[id] = foundModel;
+
+                // C. Knobs
+                const paramList = DB[id].models[foundModel];
+                if (paramList) {
+                    paramList.forEach((p, pIdx) => {
+                        let rawVal = raw[blk.b_offset + 2 + pIdx];
+                        if (rawVal !== undefined) {
+                            stateKnobs[blk.start + pIdx] = rawVal;
+                        }
+                    });
+                }
+            }
+        }
+
         renderChain();
         renderKnobs();
     }
 
-    // ==========================================
-    // 3. UI RENDERING & INTERACTION
-    // ==========================================
-
+    // --- 3. UI RENDERING ---
     function changePatch(dir) {
-        if(dir === 0) {
-            // Refresh current
-        } else {
+        if(dir !== 0) {
             currentPatchID = Math.max(0, Math.min(127, currentPatchID + dir));
             if(midiOut) midiOut.send([0xC0, currentPatchID]);
         }
@@ -272,30 +290,23 @@
     }
 
     function renderChain() {
-        const c = document.getElementById('chainUI');
-        c.innerHTML = '';
-        
+        const c = document.getElementById('chainUI'); c.innerHTML = '';
         CHAIN_ORDER.forEach(id => {
             let el = document.createElement('div');
             let isOn = stateBypass[id] === true;
             let isSel = currentEditBlock === id;
-            
             el.className = `pedal-block ${isOn ? 'on' : ''} ${isSel ? 'selected' : ''}`;
             el.innerText = id;
-            
             el.onclick = () => {
                 if(isSel) {
-                    // Toggle Bypass
                     let newState = !isOn;
                     stateBypass[id] = newState;
                     if(midiOut) midiOut.send([0xB0, BLOCKS[id].cc, newState ? 127 : 0]);
                     renderChain();
                 } else {
-                    // Select
                     currentEditBlock = id;
                     if(midiOut) midiOut.send([0xB0, 49, BLOCKS[id].sel]);
-                    renderChain();
-                    renderKnobs();
+                    renderChain(); renderKnobs();
                 }
             };
             c.appendChild(el);
@@ -303,20 +314,12 @@
     }
 
     function renderKnobs() {
-        const c = document.getElementById('knobUI');
-        c.innerHTML = '';
+        const c = document.getElementById('knobUI'); c.innerHTML = '';
+        const sel = document.getElementById('modelSel'); sel.innerHTML = '';
         
-        const sel = document.getElementById('modelSel');
-        sel.innerHTML = '';
         const blockDB = DB[currentEditBlock];
         const models = Object.keys(blockDB.models);
-        
-        models.forEach(m => {
-            let opt = document.createElement('option');
-            opt.value = m;
-            opt.innerText = m;
-            sel.appendChild(opt);
-        });
+        models.forEach(m => sel.appendChild(new Option(m,m)));
         
         let curModel = stateModels[currentEditBlock] || models[0];
         sel.value = curModel;
@@ -324,10 +327,9 @@
         const params = blockDB.models[curModel];
         const startCC = BLOCKS[currentEditBlock].start;
         
-        params.forEach((paramName, idx) => {
+        params.forEach((p, idx) => {
             let cc = startCC + idx;
             let val = stateKnobs[cc] !== undefined ? stateKnobs[cc] : 64; 
-            
             let wrap = document.createElement('div');
             wrap.className = 'knob-group';
             wrap.innerHTML = `
@@ -337,7 +339,7 @@
                     <circle id="dot-${cc}" cx="50" cy="50" r="4" fill="#fff" transform="rotate(${-135 + (val * 2.8)}, 50, 50) translate(0, -32)"/>
                 </svg>
                 <div class="knob-val-text" id="txt-${cc}">${Math.round((val/127)*100)}</div>
-                <div class="knob-label">${paramName}</div>
+                <div class="knob-label">${p}</div>
             `;
             c.appendChild(wrap);
         });
@@ -347,7 +349,6 @@
         let arc = document.getElementById(`arc-${cc}`);
         let dot = document.getElementById(`dot-${cc}`);
         let txt = document.getElementById(`txt-${cc}`);
-        
         if(arc) {
             arc.style.strokeDashoffset = 235 - (val * 1.85);
             dot.setAttribute('transform', `rotate(${-135 + (val * 2.8)}, 50, 50) translate(0, -32)`);
@@ -361,9 +362,6 @@
         renderKnobs();
     }
 
-    // ==========================================
-    // 4. INTERACTION UTILS
-    // ==========================================
     function startDrag(e, cc) {
         e.preventDefault();
         const svg = e.target.closest('svg');
@@ -375,21 +373,14 @@
         function onMove(ev) {
             let delta = startY - ev.clientY;
             let newVal = Math.max(0, Math.min(127, startVal + delta));
-            
             if(newVal !== stateKnobs[cc]) {
                 stateKnobs[cc] = newVal;
                 updateKnobVisual(cc, newVal);
                 if(midiOut) midiOut.send([0xB0, cc, newVal]);
             }
         }
-        
-        function onUp() {
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
-        }
-        
-        window.addEventListener('pointermove', onMove);
-        window.addEventListener('pointerup', onUp);
+        function onUp() { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); }
+        window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
     }
     
     function exportPatch() {
@@ -417,9 +408,7 @@
         reader.readAsText(f);
     }
 
-    // INIT UI
-    renderChain();
-    renderKnobs();
+    renderChain(); renderKnobs();
 </script>
 </body>
 </html>
