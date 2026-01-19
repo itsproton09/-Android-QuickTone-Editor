@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX EDITOR V47 (LOGIC FIXED)</title>
+    <title>NUX EDITOR V49 (UNFROZEN)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
         
-        :root { --bg:#121212; --gold:#D4AF37; --text:#e0e0e0; --accent:#00E676; --panel:#1a1a1a; }
+        :root { --bg:#121212; --gold:#D4AF37; --text:#e0e0e0; --accent:#00E676; --danger:#FF1744; --panel:#1a1a1a; }
         * { box-sizing:border-box; user-select:none; touch-action:none; }
         body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
@@ -29,8 +29,6 @@
         .patch-name { font-family:'Inter'; font-size:1.4rem; color:#fff; font-weight:800; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
         
         .nav-row { display:flex; gap:15px; width:340px; margin-top:12px; }
-        
-        /* LOCKED BUTTONS */
         .btn-nav { flex:1; height:40px; background:#222; border:1px solid #333; color:#888; border-radius:6px; font-weight:700; cursor:pointer; font-size:14px; transition:0.2s; }
         .btn-nav:hover { background:#333; color:#fff; border-color:#555; }
         .btn-nav:disabled { opacity:0.3; cursor:not-allowed; background:#111; color:#444; border-color:#222; }
@@ -40,15 +38,25 @@
             height:90px; width:100%; max-width:100%; background:#111; border-top:1px solid #222; border-bottom:1px solid #222;
             display:flex; align-items:center; justify-content:center; gap:10px; padding:0 20px; overflow-x:auto; margin-top:0;
         }
+        
         .pedal-block { 
             width:70px; height:60px; background:#222; border:2px solid #333; border-radius:6px; 
             display:flex; flex-direction:column; justify-content:center; align-items:center; 
             font-size:11px; font-weight:800; color:#666; cursor:pointer; position:relative; transition:0.2s;
+            opacity: 0.5; pointer-events: none; 
         }
+        body.linked .pedal-block { opacity: 1; pointer-events: auto; }
         .pedal-block:hover { background:#2a2a2a; border-color:#444; }
-        .pedal-block.on { background:linear-gradient(180deg, #2a2a2a, #1a1a1a); border-color:#666; color:#fff; }
+
+        /* RED (OFF) */
+        .pedal-block.off { border-color: var(--danger); color: var(--danger); background: rgba(255, 23, 68, 0.05); }
+        .pedal-block.off::after { content:''; position:absolute; top:8px; width:6px; height:6px; border-radius:50%; background:var(--danger); box-shadow:0 0 5px var(--danger); }
+
+        /* GREEN (ON) */
+        .pedal-block.on { background:linear-gradient(180deg, #222, #151515); border-color:#666; color:#fff; }
         .pedal-block.on::after { content:''; position:absolute; top:8px; width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent); }
-        .pedal-block.selected { border-color:var(--gold); transform:translateY(-5px); box-shadow:0 10px 20px rgba(0,0,0,0.5); z-index:5; color:var(--gold); }
+
+        .pedal-block.selected { border-color:var(--gold) !important; transform:translateY(-5px); box-shadow:0 10px 20px rgba(0,0,0,0.5); z-index:5; color:var(--gold) !important; }
 
         /* STAGE */
         .stage { flex:1; background:#121212; padding:40px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; }
@@ -69,14 +77,14 @@
 <body>
 
     <header>
-        <div class="logo">NUX <span>EDITOR V47</span></div>
+        <div class="logo">NUX <span>EDITOR V49</span></div>
         <div class="status-light" id="connStatus"></div>
     </header>
 
     <div class="top-deck">
         <div class="lcd-frame">
             <div class="patch-num" id="pNum">--</div>
-            <div class="patch-name" id="pName">READY</div>
+            <div class="patch-name" id="pName">WAITING...</div>
         </div>
         <div class="nav-row">
             <button id="btnPrev" class="btn-nav" disabled onclick="changePatch(-1)">◀ PREV PATCH</button>
@@ -98,16 +106,11 @@
     <input type="file" id="fileImp" hidden onchange="importFile(this)">
 
 <script>
-    // ==========================================
-    // 1. CONFIGURATION
-    // ==========================================
-    
-    // FINAL ORDER
     const CHAIN_ORDER = ['WAH', 'CMP', 'GATE', 'EFX', 'AMP', 'IR', 'EQ', 'MOD', 'DLY', 'RVB'];
     
-    // *** FIX: SWAPPED WAH (89) AND IR (9) BASED ON USER TEST ***
+    // Updated based on your feedback (Wah=89, IR=9)
     const BLOCKS = {
-        'WAH': { cc:89, sel:1,  start:10, b_offset: 72 }, // Corrected based on IR=9
+        'WAH': { cc:89, sel:1,  start:10, b_offset: 72 }, 
         'CMP': { cc:14, sel:2,  start:15, b_offset: 20 },
         'GATE':{ cc:39, sel:3,  start:40, b_offset: 60 },
         'EFX': { cc:19, sel:4,  start:20, b_offset: 24 },
@@ -115,8 +118,8 @@
         'EQ':  { cc:44, sel:6,  start:45, b_offset: 40 },
         'MOD': { cc:59, sel:7,  start:60, b_offset: 48 }, 
         'DLY': { cc:69, sel:8,  start:70, b_offset: 56 },
-        'RVB': { cc:79, sel:9,  start:80, b_offset: 64 }, // Standard Reverb
-        'IR':  { cc:9,  sel:10, start:90, b_offset: 12 }  // Corrected based on user feedback
+        'RVB': { cc:79, sel:9,  start:80, b_offset: 64 }, 
+        'IR':  { cc:9,  sel:10, start:90, b_offset: 12 }  
     };
 
     const DB = {
@@ -139,7 +142,6 @@
     let stateKnobs = {}; 
     let stateModels = {}; 
 
-    // --- 2. MIDI ENGINE ---
     function startMidi() {
         if (!navigator.requestMIDIAccess) return alert("WebMIDI not supported");
         navigator.requestMIDIAccess({ sysex: true }).then(access => {
@@ -150,7 +152,7 @@
                 document.getElementById('connStatus').className = 'status-light connected';
                 document.getElementById('pName').innerText = "LINKED!";
                 
-                // UNLOCK BUTTONS (Logic Fix)
+                document.body.classList.add('linked');
                 document.getElementById('btnPrev').disabled = false;
                 document.getElementById('btnNext').disabled = false;
 
@@ -158,13 +160,9 @@
                 const inp = inputs.find(i => i.name.toUpperCase().includes("NUX") || i.name.toUpperCase().includes("MG")) || inputs[0];
                 if(inp) inp.onmidimessage = onMidiMsg;
                 
-                // Force Editor Mode
                 midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
                 
-                // FORCE READ (Green Light Sync)
-                setTimeout(() => {
-                   changePatch(0); // This triggers a refresh of the current patch
-                }, 500); 
+                setTimeout(() => { changePatch(0); }, 500); 
             } else { alert("No NUX Device Found!"); }
         });
     }
@@ -177,14 +175,12 @@
         led.classList.add('rx'); setTimeout(() => led.classList.remove('rx'), 50);
 
         if (cmd === 0xB0) {
-            // Check Bypass
             for (let id in BLOCKS) {
                 if (BLOCKS[id].cc === d1) {
                     stateBypass[id] = d2 > 0;
                     renderChain(); return;
                 }
             }
-            // Check Selection
             if (d1 === 49) {
                 for (let id in BLOCKS) {
                     if (BLOCKS[id].sel === d2) {
@@ -210,7 +206,6 @@
     }
 
     function parseSysex(raw) {
-        // Name Search
         let currentStr = "";
         let foundStrings = [];
         for(let i=0; i<raw.length; i++) {
@@ -227,7 +222,6 @@
             document.getElementById('pName').innerText = foundStrings[0];
         }
 
-        // DEEP SYNC (Green Lights)
         for (let id in BLOCKS) {
             let blk = BLOCKS[id];
             if (raw.length > blk.b_offset + 5) {
@@ -254,14 +248,12 @@
         renderKnobs();
     }
 
-    // --- 3. UI RENDERING ---
     function changePatch(dir) {
         if(dir !== 0) {
             currentPatchID = Math.max(0, Math.min(127, currentPatchID + dir));
             if(midiOut) midiOut.send([0xC0, currentPatchID]);
         }
         renderPatchNum();
-        // FORCE READ ON PATCH CHANGE
         if(midiOut) midiOut.send([0xF0, 0x00, 0x00, 0x4F, 0x11, 0xF7]);
     }
 
@@ -277,17 +269,23 @@
             let el = document.createElement('div');
             let isOn = stateBypass[id] === true;
             let isSel = currentEditBlock === id;
-            el.className = `pedal-block ${isOn ? 'on' : ''} ${isSel ? 'selected' : ''}`;
+            
+            el.className = `pedal-block ${isOn ? 'on' : 'off'} ${isSel ? 'selected' : ''}`;
             el.innerText = id;
+            
             el.onclick = () => {
+                if(!midiOut) return; 
                 if(isSel) {
+                    // TOGGLE
                     let newState = !isOn;
                     stateBypass[id] = newState;
-                    if(midiOut) midiOut.send([0xB0, BLOCKS[id].cc, newState ? 127 : 0]);
+                    // FIX: CLEANER CLICK. ONLY SEND BYPASS. NO REDUNDANT SELECT.
+                    midiOut.send([0xB0, BLOCKS[id].cc, newState ? 127 : 0]);
                     renderChain();
                 } else {
+                    // SELECT
                     currentEditBlock = id;
-                    if(midiOut) midiOut.send([0xB0, 49, BLOCKS[id].sel]);
+                    midiOut.send([0xB0, 49, BLOCKS[id].sel]);
                     renderChain(); renderKnobs();
                 }
             };
@@ -346,11 +344,12 @@
 
     function startDrag(e, cc) {
         e.preventDefault();
+        if(!midiOut) return;
         const svg = e.target.closest('svg');
         let startY = e.clientY;
         let startVal = stateKnobs[cc] !== undefined ? stateKnobs[cc] : 64;
         
-        if(midiOut) midiOut.send([0xB0, 49, BLOCKS[currentEditBlock].sel]);
+        midiOut.send([0xB0, 49, BLOCKS[currentEditBlock].sel]);
 
         function onMove(ev) {
             let delta = startY - ev.clientY;
@@ -358,7 +357,7 @@
             if(newVal !== stateKnobs[cc]) {
                 stateKnobs[cc] = newVal;
                 updateKnobVisual(cc, newVal);
-                if(midiOut) midiOut.send([0xB0, cc, newVal]);
+                midiOut.send([0xB0, cc, newVal]);
             }
         }
         function onUp() { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); }
@@ -390,6 +389,7 @@
         reader.readAsText(f);
     }
 
+    // INIT
     renderChain(); renderKnobs();
 </script>
 </body>
