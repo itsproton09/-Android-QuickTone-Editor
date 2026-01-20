@@ -3,224 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MG-30 Mobile</title>
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJzaG9ydF9uYW1lIjogIk1HMzAgRWRpdCIsCiAgIm5hbWUiOiAiTlVYIE1HMzAgUHJvIEVkaXRvciIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzA1MDUwNSIsCiAgInRoZW1lX2NvbG9yIjogIiMwMGZmODgiLAogICJvcmllbnRhdGlvbiI6ICJsYW5kc2NhcGUiCn0=">
+    <title>NUX MG30 PRO EDITOR | Raunak Graphics</title>
     <style>
-        :root { --gold: #D4AF37; --bg: #000; --lcd-bg: #111; --green: #00E676; --red: #FF3D00; }
+        :root { --neon: #00ff88; --warn: #ff3131; --bg: #050505; --panel: #121212; --border: #2a2a2a; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; overflow-x: hidden; touch-action: none; }
         
-        /* Mobile Reset */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        body { 
-            background: #000; color: #eee; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica; 
-            margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
-        }
-
-        /* Sticky LCD Panel */
-        .header { 
-            background: var(--lcd-bg); padding: 10px; border-bottom: 2px solid #333; 
-            position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.8);
-        }
-        .lcd { 
-            background: #050505; border: 1px solid #444; border-radius: 8px; padding: 10px; 
-            display: flex; align-items: center; border-left: 5px solid var(--gold);
-        }
-        .p-num { font-size: 2.8rem; color: var(--gold); font-family: monospace; font-weight: 900; margin-right: 15px; line-height: 1; }
-        .p-info { flex: 1; min-width: 0; }
-        .p-name { font-size: 1.1rem; font-weight: bold; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .p-stat { font-size: 0.7rem; color: #666; font-weight: bold; margin-top: 2px; }
-
-        /* Master Section */
-        .master-strip { background: #1a1a1a; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-
-        /* Scrollable Area */
-        .main-content { flex: 1; overflow-y: auto; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
-
-        /* Signal Chain Grid - Larger for Thumbs */
-        .chain-grid { 
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; 
-            background: #000; position: sticky; top: 0; z-index: 90;
-        }
-        .block { 
-            height: 55px; background: #222; border: 1px solid #444; border-radius: 6px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            font-size: 10px; font-weight: bold; color: #888;
-        }
-        .led { width: 8px; height: 8px; border-radius: 50%; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.5); }
-        .led-on { background: var(--green); box-shadow: 0 0 8px var(--green); }
-        .led-off { background: var(--red); box-shadow: 0 0 5px var(--red); }
+        /* LCD DASHBOARD */
+        .dashboard { background: #000; border: 2px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; text-align: center; box-shadow: inset 0 0 15px rgba(0,255,136,0.1); }
+        #patch-num { font-family: 'Courier New', monospace; font-size: 3.5rem; color: var(--neon); font-weight: bold; margin: 0; text-shadow: 0 0 10px var(--neon); }
+        #patch-name { font-size: 1.1rem; letter-spacing: 3px; color: #fff; margin: 5px 0; text-transform: uppercase; }
         
-        .selected { border: 2px solid var(--gold); background: #333; color: var(--gold); }
-        .selected .led { animation: pulse 1.2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        /* STATUS & NAVIGATION */
+        .status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .status-btn { padding: 8px 15px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; border: 1px solid #444; transition: 0.4s; }
+        .connected { color: var(--neon); border-color: var(--neon); box-shadow: 0 0 15px var(--neon); background: rgba(0,255,136,0.1); }
+        .disconnected { color: var(--warn); border-color: var(--warn); box-shadow: 0 0 15px var(--warn); background: rgba(255,49,49,0.1); }
+        .nav-btn { background: none; border: 1px solid var(--neon); color: var(--neon); padding: 8px 25px; border-radius: 5px; cursor: pointer; font-size: 1.2rem; }
 
-        /* Knobs - Optimized for 2-column on small screens, 3-column on larger */
-        .knob-grid { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
-            gap: 15px; padding: 15px; justify-items: center;
-        }
-        .knob-wrap { text-align: center; width: 100px; padding: 10px; background: #111; border-radius: 12px; border: 1px solid #222; }
-        .knob-out { 
-            width: 65px; height: 65px; border-radius: 50%; background: radial-gradient(circle, #333, #111); 
-            border: 3px solid #444; position: relative; margin: 0 auto 8px auto; touch-action: none; 
-        }
-        .knob-ind { position: absolute; width: 4px; height: 18px; background: var(--gold); left: 50%; top: 5px; transform-origin: 50% 28px; transform: translateX(-50%) rotate(-135deg); border-radius: 2px; }
-        .knob-lab { font-size: 0.7rem; color: #999; text-transform: uppercase; margin-bottom: 4px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .knob-val { font-size: 0.9rem; color: var(--gold); font-family: monospace; font-weight: bold; }
+        /* SIGNAL CHAIN */
+        .chain-view { display: flex; overflow-x: auto; gap: 10px; padding: 15px 5px; background: #0a0a0a; border-radius: 8px; border: 1px solid #222; margin-bottom: 15px; }
+        .block { background: var(--panel); border: 2px solid #333; min-width: 90px; padding: 12px; border-radius: 6px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; }
+        .block.active { border-color: var(--neon); background: #001a0d; }
+        .block.bypassed { opacity: 0.4; filter: grayscale(1); }
+        .block-label { font-size: 0.6rem; color: #888; display: block; text-transform: uppercase; }
 
-        /* Persistent Footer */
-        footer { 
-            background: #111; padding: 10px; display: grid; grid-template-columns: repeat(4, 1fr); 
-            gap: 8px; border-top: 1px solid #333; padding-bottom: calc(10px + env(safe-area-inset-bottom));
-        }
-        .btn { 
-            padding: 12px 2px; background: #2a2a2a; border: 1px solid #444; color: #eee; 
-            border-radius: 6px; font-size: 11px; font-weight: bold; text-align: center; 
-        }
-        .btn-gold { background: var(--gold); color: #000; border: none; }
+        /* KNOB EDITOR PANEL */
+        .editor-panel { background: var(--panel); border-radius: 12px; padding: 20px; border: 1px solid #222; }
+        .model-select { width: 100%; background: #000; color: var(--neon); border: 1px solid #444; padding: 12px; margin-bottom: 20px; border-radius: 5px; font-weight: bold; }
+        .knob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .knob-unit { text-align: center; }
+        .knob-circle { width: 55px; height: 55px; background: radial-gradient(#444, #111); border: 2px solid #444; border-radius: 50%; margin: 0 auto 5px; position: relative; }
+        .knob-marker { position: absolute; width: 4px; height: 12px; background: var(--neon); left: 25.5px; top: 3px; border-radius: 2px; transform-origin: center 24px; transition: transform 0.1s linear; }
+        .knob-label { font-size: 0.6rem; color: #aaa; text-transform: uppercase; margin-bottom: 3px; }
+        .knob-val { font-family: monospace; color: var(--neon); font-size: 0.8rem; }
+
+        .io-bar { display: flex; gap: 10px; padding: 20px 0; justify-content: center; }
+        .io-btn { background: #222; color: #fff; border: 1px solid #444; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="lcd">
-        <div id="ui-num" class="p-num">--</div>
-        <div class="p-info">
-            <div id="ui-name" class="p-name">MG-30 OFFLINE</div>
-            <div id="ui-stat" class="p-stat">CONNECT VIA USB OTG</div>
+    <div class="status-row">
+        <div id="status-btn" class="disconnected">● DISCONNECTED</div>
+        <div style="display:flex; gap:10px;">
+            <button class="nav-btn" onclick="sendPC(-1)">◀</button>
+            <button class="nav-btn" onclick="sendPC(1)">▶</button>
         </div>
     </div>
-</div>
 
-<div class="master-strip">
-    <span style="font-size: 11px; font-weight: bold; color: var(--gold)">OUTPUT LEVEL</span>
-    <div id="master-val" style="font-family: monospace; color: var(--gold); font-weight: bold;">80%</div>
-</div>
+    <div class="dashboard">
+        <div id="patch-num">01A</div>
+        <div id="patch-name">READY FOR OTG</div>
+    </div>
 
-<div class="main-content">
-    <div class="chain-grid" id="ui-chain"></div>
-    <div class="knob-grid" id="ui-params"></div>
-</div>
+    <div class="chain-view" id="main-chain"></div>
 
-<footer>
-    <div class="btn btn-gold" onclick="initMIDI()">LINK</div>
-    <div class="btn" onclick="syncData()">SYNC</div>
-    <div class="btn" onclick="patchChange(-1)">PREV</div>
-    <div class="btn" onclick="patchChange(1)">NEXT</div>
-</footer>
+    <div class="editor-panel">
+        <select id="model-list" class="model-select" onchange="updateModel(this.value)"></select>
+        <div class="knob-grid" id="knob-area"></div>
+    </div>
 
-<script>
-    let mOut, mIn, pNum = 0, activeBlock = 'AMP';
-    const BLOCKS = {
-        'WAH':  {id:1, cc:89, s:10, p:['Pos','Mix','Vol']},
-        'CMP':  {id:2, cc:14, s:15, p:['Sust','Lvl','Clip']},
-        'GATE': {id:3, cc:39, s:40, p:['Thr','Ran','Rel']},
-        'EFX':  {id:4, cc:19, s:20, p:['Gain','Lvl','Tone','Type']},
-        'AMP':  {id:5, cc:29, s:30, p:['Gain','Mast','Bass','Mid','Tre','Pres']},
-        'EQ':   {id:6, cc:44, s:45, p:['100','400','1.6K','3.2K','8K']},
-        'MOD':  {id:7, cc:59, s:60, p:['Rate','Dep','Mix','Tone']},
-        'DLY':  {id:8, cc:69, s:70, p:['Time','Rpt','Mix','Mod']},
-        'RVB':  {id:9, cc:79, s:80, p:['Dcy','Mix','Tone','Dmp']},
-        'IR':   {id:10,cc:9,  s:90, p:['Lvl','H-Cut','L-Cut']},
-        'S/R':  {id:11,cc:34, s:35, p:['Snd','Rtn']}
-    };
+    <div class="io-bar">
+        <button class="io-btn" onclick="exportPatch()">📥 EXPORT .mg30patch</button>
+        <input type="file" id="import-input" hidden onchange="importPatch(this)">
+        <button class="io-btn" onclick="document.getElementById('import-input').click()">📂 IMPORT</button>
+    </div>
 
-    let bypassMap = {};
-    let midiValues = {};
+    <script>
+        const NUX_HDR = [0xF0, 0x00, 0x21, 0x17, 0x04];
+        let midiIn = null, midiOut = null, currentPC = 0, selectedBlock = 'amp';
 
-    async function initMIDI() {
-        try {
-            const access = await navigator.requestMIDIAccess({ sysex: true });
-            mOut = Array.from(access.outputs.values()).find(o => /MG-30|NUX/i.test(o.name));
-            if (mOut) {
-                mIn = Array.from(access.inputs.values()).find(i => i.name === mOut.name);
-                mIn.onmidimessage = (m) => handleSysex(m.data);
-                syncData();
-            } else { alert("NUX Not Found. Is OTG connected?"); }
-        } catch(e) { alert("MIDI Error: Check Permissions."); }
-    }
+        const DATABASE = {
+            wah: { models: ["Clyde", "Cry BB", "V847", "Horse Wah", "Octave Shift"], knobs: 2, labels: ["Contour", "Range"] },
+            comp: { models: ["Rose", "K Comp", "Studio Comp"], knobs: 3, labels: ["Sustain", "Attack", "Level"] },
+            gate: { models: ["Noise Reduction"], knobs: 1, labels: ["Threshold"] },
+            efx: { models: ["Dist+", "RC Boost", "AC Boost", "Dist One", "T Scream", "Blues Drv", "Morning Drv", "EAT", "Red Dirt", "Crunch", "Muff Fuzz", "Katana Boost", "Red Fuzz", "Touch Wah"], knobs: 3, labels: ["Gain", "Tone", "Level"] },
+            amp: { models: ["Jazz Clean", "Class A35", "Class A30", "Bassmate", "Tweedy", "Hiwire", "Plexi 300", "Plexi 45", "Brit 800", "1987x50", "Slo 100", "Fireman HBE", "Brit 2000", "Die Vh4", "Uber", "Dual Rect", "Super Rvb", "Twin Rvb", "Deluxe Rvb", "Cali crunch", "Brit Blues", "match", "MrZ 38", "Vibro King", "Budda"], knobs: 6, labels: ["Gain", "Master", "Bass", "Mid", "Treb", "Pres"] },
+            ir: { models: ["A212", "JZ120", "BS410", "GB412", "TR212", "DR112", "V412 1", "V412 2", "AGL DB810", "AMP SV810", "AMP SV212", "MKB410", "TRC410", "EDEN410", "BASSGUY410", "Martin D45", "Hummingbird", "J-15"], knobs: 4, labels: ["Mic", "Pos", "Low", "Hi"] },
+            eq: { models: ["6-Band", "Align", "10-Band", "Para"], knobs: 6, labels: ["F1", "F2", "F3", "F4", "F5", "F6"] },
+            mod: { models: ["CE-1", "CE-2", "ST. Chorus", "Vibrator", "Detune", "Flanger", "Phase 90", "Phase 100", "S.C.F.", "U-Vibe", "Tremolo", "Rotary", "Harmonist"], knobs: 3, labels: ["Rate", "Depth", "Mix"] },
+            delay: { models: ["Analog", "Digital", "Modulation", "Tape", "Reverse", "Pan", "Duotime", "Phi"], knobs: 4, labels: ["Time", "Repeat", "Mix", "Mod"] },
+            reverb: { models: ["Room", "Hall", "Plate", "Spring", "Shimmer"], knobs: 3, labels: ["Decay", "Tone", "Mix"] }
+        };
 
-    function handleSysex(d) {
-        if (d[0] === 0xF0 && d[3] === 0x4F) {
-            pNum = d[12];
-            document.getElementById('ui-num').innerText = pNum.toString().padStart(2, '0');
-            let name = "";
-            for (let i = 14; i < 26; i++) if (d[i] >= 32 && d[i] <= 126) name += String.fromCharCode(d[i]);
-            document.getElementById('ui-name').innerText = name.trim() || "PRESET";
-            Object.keys(BLOCKS).forEach(key => bypassMap[key] = d[32 + (BLOCKS[key].id * 2)] > 0);
-            document.getElementById('ui-stat').innerText = "LIVE SYNC ACTIVE";
-            renderUI();
-        }
-    }
-
-    function renderUI() {
-        const chain = document.getElementById('ui-chain');
-        chain.innerHTML = '';
-        Object.keys(BLOCKS).forEach(key => {
-            const div = document.createElement('div');
-            div.className = `block ${activeBlock === key ? 'selected' : ''}`;
-            const led = document.createElement('div');
-            led.className = `led ${bypassMap[key] ? 'led-on' : 'led-off'}`;
-            div.appendChild(led);
-            div.appendChild(Object.assign(document.createElement('span'), {innerText: key}));
-
-            div.onclick = () => {
-                if(activeBlock === key) {
-                    bypassMap[key] = !bypassMap[key];
-                    sendMIDI(49, BLOCKS[key].id);
-                    setTimeout(() => sendMIDI(BLOCKS[key].cc, bypassMap[key] ? 127 : 0), 25);
+        async function initMIDI() {
+            try {
+                const midi = await navigator.requestMIDIAccess({ sysex: true });
+                midiIn = Array.from(midi.inputs.values()).find(i => i.name.includes("MG-30"));
+                midiOut = Array.from(midi.outputs.values()).find(o => o.name.includes("MG-30"));
+                
+                const btn = document.getElementById('status-btn');
+                if (midiOut && midiIn) {
+                    btn.className = "status-btn connected"; btn.innerText = "● CONNECTED";
+                    midiIn.onmidimessage = handleMIDIMessage;
                 } else {
-                    activeBlock = key;
-                    sendMIDI(49, BLOCKS[key].id);
+                    btn.className = "status-btn disconnected"; btn.innerText = "● DISCONNECTED";
                 }
-                renderUI();
-            };
-            chain.appendChild(div);
-        });
+            } catch (e) { console.error("WebMIDI Error"); }
+        }
 
-        const params = document.getElementById('ui-params');
-        params.innerHTML = '';
-        BLOCKS[activeBlock].p.forEach((label, i) => {
-            const cc = BLOCKS[activeBlock].s + i;
-            params.appendChild(createKnob(label, cc, midiValues[cc] || 64));
-        });
-    }
+        function handleMIDIMessage(msg) {
+            const data = msg.data;
+            if (data[0] === 0xC0) updatePatchUI(data[1]);
+            if (data[5] === 0x02) updateKnobUI(data[7], data[8]);
+        }
 
-    function createKnob(label, cc, startM) {
-        const wrap = document.createElement('div');
-        wrap.className = 'knob-wrap';
-        const toPct = (m) => Math.round((m / 127) * 100);
-        wrap.innerHTML = `<span class="knob-lab">${label}</span><div class="knob-out"><div class="knob-ind" id="ind-${cc}"></div></div><div class="knob-val"><span id="val-${cc}">${toPct(startM)}</span>%</div>`;
+        function sendPC(dir) {
+            if (!midiOut) return;
+            currentPC = Math.min(127, Math.max(0, currentPC + dir));
+            midiOut.send([0xC0, currentPC]);
+            updatePatchUI(currentPC);
+        }
 
-        const knob = wrap.querySelector('.knob-out');
-        let startY, startVal;
+        function updatePatchUI(pc) {
+            currentPC = pc;
+            const bank = Math.floor(pc / 4) + 1;
+            const slot = ['A', 'B', 'C', 'D'][pc % 4];
+            document.getElementById('patch-num').innerText = `${bank.toString().padStart(2, '0')}${slot}`;
+        }
 
-        const update = (m) => {
-            m = Math.max(0, Math.min(127, m));
-            midiValues[cc] = m;
-            document.getElementById(`val-${cc}`).innerText = toPct(m);
-            document.getElementById(`ind-${cc}`).style.transform = `translateX(-50%) rotate(${(m/127)*270-135}deg)`;
-            sendMIDI(49, BLOCKS[activeBlock].id);
-            sendMIDI(cc, m);
+        function loadBlock(key) {
+            selectedBlock = key;
+            document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+            document.getElementById(`bl-${key}`).classList.add('active');
+            const list = document.getElementById('model-list');
+            list.innerHTML = DATABASE[key].models.map(m => `<option value="${m}">${m}</option>`).join('');
+            renderKnobs(key);
+        }
+
+        function renderKnobs(key) {
+            const area = document.getElementById('knob-area');
+            const config = DATABASE[key];
+            area.innerHTML = '';
+            for(let i=0; i<config.knobs; i++) {
+                area.innerHTML += `
+                    <div class="knob-unit">
+                        <div class="knob-label">${config.labels[i]}</div>
+                        <div class="knob-circle" id="k-${i}"><div class="knob-marker"></div></div>
+                        <div class="knob-val" id="v-${i}">0</div>
+                    </div>`;
+            }
+        }
+
+        function exportPatch() {
+            const patch = { name: "MY_TONE", pc: currentPC, fw: "5.0.2", blocks: DATABASE };
+            const blob = new Blob([JSON.stringify(patch)], {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${document.getElementById('patch-num').innerText}.mg30patch`;
+            a.click();
+        }
+
+        window.onload = () => {
+            const chain = document.getElementById('main-chain');
+            Object.keys(DATABASE).forEach(k => {
+                chain.innerHTML += `<div class="block" id="bl-${k}" onclick="loadBlock('${k}')"><span class="block-label">${k}</span></div>`;
+            });
+            initMIDI(); setInterval(initMIDI, 3000);
+            loadBlock('amp');
         };
 
-        knob.onpointerdown = e => {
-            startY = e.clientY; startVal = midiValues[cc] || 64;
-            knob.setPointerCapture(e.pointerId);
-            knob.onpointermove = ev => update(startVal + Math.round((startY - ev.clientY) / 1.2));
-        };
-        knob.onpointerup = () => knob.onpointermove = null;
-        
-        setTimeout(() => document.getElementById(`ind-${cc}`).style.transform = `translateX(-50%) rotate(${(startM/127)*270-135}deg)`, 0);
-        return wrap;
-    }
-
-    function sendMIDI(c, v) { if(mOut) mOut.send([0xB0, c, v]); }
-    function syncData() { if(mOut) mOut.send([0xF0, 0x00, 0x01, 0x4F, 0x11, 0x01, 0x00, 0x00, 0xF7]); }
-    function patchChange(dir) {
-        pNum = Math.max(0, Math.min(127, pNum + dir));
-        if(mOut) mOut.send([0xC0, pNum]);
-        setTimeout(syncData, 500);
-    }
-    renderUI();
-</script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+    </script>
 </body>
 </html>
