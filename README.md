@@ -3,281 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NUX MG-30 ULTIMATE EDITOR</title>
+    <title>NUX MG-30 V5 PRO CONSOLE</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
-        
-        :root { --bg:#0f0f0f; --gold:#D4AF37; --text:#e0e0e0; --accent:#00E676; --danger:#FF1744; --panel:#1a1a1a; --border:#333; }
+        :root { --bg:#050505; --gold:#D4AF37; --text:#e0e0e0; --accent:#00E676; --panel:#151515; --border:#333; --danger:#FF1744; }
         * { box-sizing:border-box; user-select:none; touch-action:none; }
         body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-
-        /* HEADER & STATUS */
-        header { height:60px; background:#000; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 30px; flex-shrink:0; }
-        .logo { font-weight:900; color:#fff; font-size:22px; letter-spacing:1px; } .logo span { color:var(--gold); }
-        .status-grp { display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; }
-        .status-light { width:12px; height:12px; background:#333; border-radius:50%; border:1px solid #555; transition: 0.1s; }
-        .status-light.connected { background:var(--accent); box-shadow:0 0 15px var(--accent); border-color:#fff; }
-        .status-light.rx { background:#fff; box-shadow:0 0 20px #fff; }
-
-        /* LCD DISPLAY */
-        .top-deck { background:#151515; padding:20px 0; border-bottom:2px solid #222; display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
-        .lcd-frame { 
-            width:380px; height:100px; background:#000; border:4px solid #333; border-radius:8px; 
-            display:flex; align-items:center; padding:0 25px; gap:20px; box-shadow:inset 0 0 20px rgba(0,0,0,0.9);
-        }
-        .patch-num { font-family:'JetBrains Mono'; font-size:3.5rem; color:var(--gold); font-weight:700; min-width:110px; text-align:center; }
-        .patch-name { font-size:1.5rem; color:#fff; font-weight:800; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         
-        .nav-row { display:flex; gap:10px; width:380px; margin-top:15px; }
-        .btn-nav { flex:1; height:45px; background:#222; border:1px solid var(--border); color:#888; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px; }
-        .btn-nav:hover:not(:disabled) { background:#333; color:#fff; border-color:#555; }
-        .btn-nav:disabled { opacity:0.2; cursor:default; }
+        /* HEADER & TABS */
+        header { height:70px; background:#000; border-bottom:2px solid var(--gold); display:flex; justify-content:space-between; align-items:center; padding:0 30px; }
+        .tabs { display:flex; gap:12px; height:100%; align-items:center; }
+        .tab-btn { padding:12px 24px; border:none; background:#222; color:#aaa; font-weight:900; cursor:pointer; font-size:12px; border-radius:6px; text-transform:uppercase; letter-spacing:1px; }
+        .tab-btn.active { background:var(--gold); color:#000; box-shadow: 0 0 20px rgba(212, 175, 55, 0.4); }
+        
+        /* BIG LCD */
+        .lcd-frame { width:100%; max-width:600px; height:110px; background:#000; border:4px solid #333; border-radius:12px; display:flex; align-items:center; padding:0 30px; gap:25px; margin: 20px auto; }
+        .patch-num { font-family:'JetBrains Mono'; font-size:4rem; color:var(--gold); font-weight:700; min-width:140px; }
+        .patch-name { font-size:1.8rem; color:#fff; font-weight:900; text-transform:uppercase; letter-spacing:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
         /* SIGNAL CHAIN */
-        .chain-container { 
-            height:95px; width:100%; background:#0a0a0a; border-top:1px solid var(--border); border-bottom:1px solid var(--border);
-            display:flex; align-items:center; justify-content:center; gap:8px; padding:0 20px; overflow-x:auto;
-        }
-        .pedal-block { 
-            min-width:75px; height:65px; background:#1a1a1a; border:2px solid #333; border-radius:6px; 
-            display:flex; flex-direction:column; justify-content:center; align-items:center; 
-            font-size:10px; font-weight:900; color:#555; cursor:pointer; position:relative; transition:0.2s;
-        }
-        .pedal-block.on { border-color:#555; color:#fff; background: linear-gradient(180deg, #252525, #1a1a1a); }
-        .pedal-block.on::after { content:''; position:absolute; top:8px; width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent); }
-        .pedal-block.off { border-color: #441111; color: #662222; }
-        .pedal-block.off::after { content:''; position:absolute; top:8px; width:6px; height:6px; border-radius:50%; background:var(--danger); opacity:0.4; }
-        .pedal-block.selected { border-color:var(--gold) !important; transform:translateY(-5px); box-shadow:0 10px 20px rgba(0,0,0,0.5); color:var(--gold) !important; }
+        .chain-container { height:110px; width:100%; background:#000; border-top:1px solid #222; border-bottom:1px solid #222; display:flex; align-items:center; justify-content:center; gap:10px; padding:0 20px; overflow-x:auto; }
+        .pedal-block { min-width:85px; height:70px; background:#1a1a1a; border:3px solid #333; border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:900; color:#555; cursor:pointer; position:relative; }
+        .pedal-block.on { border-color:#444; color:#fff; background:linear-gradient(180deg, #252525, #111); }
+        .pedal-block.on::after { content:''; position:absolute; top:8px; width:10px; height:10px; background:var(--accent); border-radius:50%; box-shadow:0 0 12px var(--accent); }
+        .pedal-block.selected { border-color:var(--gold) !important; color:var(--gold) !important; transform:scale(1.1); z-index:10; }
 
-        /* EDITOR STAGE */
-        .stage { flex:1; background:radial-gradient(circle at center, #181818 0%, #0f0f0f 100%); padding:40px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; }
-        .model-selector { 
-            background:#111; color:var(--gold); border:2px solid var(--border); padding:12px 30px; 
-            font-family:'JetBrains Mono'; border-radius:40px; font-weight:700; font-size:16px; 
-            text-transform:uppercase; cursor:pointer; width:100%; max-width:420px; margin-bottom:40px; text-align:center;
-        }
-        .pedal-chassis { 
-            width:100%; max-width:1000px; background:#1a1a1a; border-radius:20px; padding:50px; 
-            display:flex; flex-wrap:wrap; justify-content:center; gap:40px; border:1px solid #333; 
-            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-        }
+        /* LIVE PERFORMANCE VIEW (Visible & Large) */
+        #liveView { display:none; flex:1; padding:30px; flex-direction:column; align-items:center; overflow-y:auto; }
+        .live-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; width:100%; max-width:1100px; }
+        .live-btn { height:180px; background:#1a1a1a; border:5px solid #333; border-radius:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:0.1s; }
+        .live-btn.active { border-color:var(--accent); background:rgba(0,230,118,0.1); }
+        .live-btn.scene { border-color:var(--gold); }
+        .live-btn:active { transform:scale(0.95); }
+        .live-label { font-size:26px; font-weight:900; color:#fff; text-transform:uppercase; margin-top:10px; }
+        .live-sub { font-family:'JetBrains Mono'; font-size:14px; color:var(--gold); }
+
+        /* EDITOR UI */
+        .stage { flex:1; padding:30px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; }
+        .pedal-chassis { width:100%; max-width:1150px; background:var(--panel); border-radius:25px; padding:45px; display:flex; flex-wrap:wrap; justify-content:center; gap:35px; border:2px solid #222; }
         
-        /* KNOB SYSTEM */
-        .knob-group { display:flex; flex-direction:column; align-items:center; width:100px; }
-        .knob-svg { width:85px; height:85px; cursor:ns-resize; filter:drop-shadow(0 5px 10px rgba(0,0,0,0.5)); }
-        .knob-bg { fill:#111; stroke:#000; stroke-width:2; }
-        .knob-path { fill:none; stroke:var(--gold); stroke-width:8; stroke-linecap:round; transition: stroke-dashoffset 0.1s ease; }
-        .knob-val-text { font-family:'JetBrains Mono'; font-size:18px; font-weight:700; color:#fff; margin:10px 0 5px 0; }
-        .knob-label { font-size:11px; font-weight:900; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; }
+        .knob-group { display:flex; flex-direction:column; align-items:center; width:110px; }
+        .knob-svg { width:95px; height:95px; cursor:ns-resize; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
+        .knob-path { fill:none; stroke:var(--gold); stroke-width:9; stroke-linecap:round; }
+        .knob-val-text { font-family:'JetBrains Mono'; font-size:18px; color:#fff; margin-top:12px; font-weight:700; }
+        .knob-label { font-size:11px; color:#666; text-transform:uppercase; margin-top:6px; font-weight:900; text-align:center; letter-spacing:1px; }
 
-        footer { height:80px; background:#000; border-top:1px solid var(--border); display:flex; gap:20px; padding:0 40px; align-items:center; justify-content:center; }
-        .btn-main { padding:0 25px; height:45px; background:#151515; border:1px solid var(--border); color:#aaa; font-size:12px; font-weight:900; border-radius:8px; cursor:pointer; transition:0.2s; }
-        .btn-main:hover { background:#222; color:#fff; }
-        .btn-connect { color:var(--accent); border-color:rgba(0,230,118,0.3); background:rgba(0,230,118,0.05); }
-        .btn-connect:hover { background:rgba(0,230,118,0.15); }
+        /* FOOTER CONTROLS */
+        footer { height:90px; background:#000; border-top:2px solid #222; display:flex; gap:20px; padding:0 40px; align-items:center; justify-content:center; }
+        .btn-foot { padding:15px 30px; background:#111; border:2px solid #333; color:#fff; font-size:13px; font-weight:900; border-radius:10px; cursor:pointer; text-transform:uppercase; }
+        .btn-foot:hover { border-color:var(--gold); background:#222; }
+        .btn-connect { border-color:var(--accent); color:var(--accent); }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="logo">NUX <span>MG-30 EDITOR</span></div>
-        <div class="status-grp">
-            <span id="statText">DISCONNECTED</span>
-            <div class="status-light" id="connStatus"></div>
-        </div>
-    </header>
-
-    <div class="top-deck">
-        <div class="lcd-frame">
-            <div class="patch-num" id="pNum">--</div>
-            <div class="patch-name" id="pName">LINK HARDWARE</div>
-        </div>
-        <div class="nav-row">
-            <button id="btnPrev" class="btn-nav" disabled onclick="changePatch(-1)">◀ PREVIOUS</button>
-            <button id="btnNext" class="btn-nav" disabled onclick="changePatch(1)">NEXT ▶</button>
-        </div>
-        <div class="chain-container" id="chainUI"></div>
+<header>
+    <div style="font-weight:900; font-size:22px; color:#fff; letter-spacing:2px;">NUX <span style="color:var(--gold)">MG-30</span> PRO</div>
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-edit" onclick="switchTab('edit')">Tone Editor</button>
+        <button class="tab-btn" id="tab-live" onclick="switchTab('live')">Stage Mode</button>
     </div>
+    <div id="connStatus" style="width:16px; height:16px; border-radius:50%; background:#222; border:2px solid #444;"></div>
+</header>
 
+<div id="editView">
+    <div class="lcd-frame">
+        <div class="patch-num" id="pNum">--</div>
+        <div class="patch-name" id="pName">READY TO CONNECT</div>
+    </div>
+    <div class="chain-container" id="chainUI"></div>
     <div class="stage">
-        <select class="model-selector" id="modelSel" onchange="userSelectModel()"></select>
+        <select id="modelSel" style="margin-bottom:35px; background:#000; color:var(--gold); border:2px solid #444; padding:15px; width:500px; border-radius:10px; font-size:18px; font-weight:700; text-align:center;" onchange="userSelectModel()"></select>
         <div class="pedal-chassis" id="knobUI"></div>
     </div>
+</div>
 
-    <footer>
-        <button class="btn-main btn-connect" onclick="startMidi()">LINK MG-30</button>
-        <button class="btn-main" onclick="document.getElementById('fileImp').click()">IMPORT</button>
-        <button class="btn-main" onclick="exportPatch()">EXPORT</button>
-        <button class="btn-main" onclick="requestSync()">FORCE REFRESH</button>
-    </footer>
-    <input type="file" id="fileImp" hidden onchange="importFile(this)">
+<div id="liveView">
+    <div class="lcd-frame" style="max-width:1100px; margin-bottom:40px;">
+        <div class="patch-num" id="livePNum">--</div>
+        <div class="patch-name" id="livePName">PERFORMANCE READY</div>
+    </div>
+    <div class="live-grid">
+        <div class="live-btn scene" onclick="sendCC(60, 127)"><div class="live-sub">PRO</div><div class="live-label">SCENE 1</div></div>
+        <div class="live-btn scene" onclick="sendCC(61, 127)"><div class="live-sub">PRO</div><div class="live-label">SCENE 2</div></div>
+        <div class="live-btn scene" onclick="sendCC(62, 127)"><div class="live-sub">PRO</div><div class="live-label">SCENE 3</div></div>
+        <div class="live-btn" id="live-EFX" onclick="toggleBlock('EFX')"><div class="live-sub">DRIVE</div><div class="live-label" id="lbl-EFX">OFF</div></div>
+        <div class="live-btn" id="live-MOD" onclick="toggleBlock('MOD')"><div class="live-sub">MOD</div><div class="live-label" id="lbl-MOD">OFF</div></div>
+        <div class="live-btn" id="live-DLY" onclick="toggleBlock('DLY')"><div class="live-sub">DELAY</div><div class="live-label" id="lbl-DLY">OFF</div></div>
+    </div>
+</div>
+
+<footer>
+    <button class="btn-foot btn-connect" onclick="startMidi()">Link Hardware</button>
+    <button class="btn-foot" onclick="changePatch(-1)">◀ Prev Patch</button>
+    <button class="btn-foot" onclick="changePatch(1)">Next Patch ▶</button>
+    <button class="btn-foot" onclick="requestSync()">Refresh Sync</button>
+</footer>
 
 <script>
-    // MG-30 CONFIGURATION
-    const CHAIN_ORDER = ['WAH', 'CMP', 'GATE', 'EFX', 'AMP', 'IR', 'EQ', 'MOD', 'DLY', 'RVB'];
+    // FULL MODELS DATA
+    const MODELS = {
+        'WAH': ['Clyde','Cry BB','V847','Horse Wah','Octave Shift'],
+        'CMP': ['Rose','K Comp','Studio Comp'],
+        'EFX': ['Dist+','RC Boost','AC Boost','Dist One','T Scream','Blues Drv','Morning Drv','EAT','Red Dirt','Crunch','Muff Fuzz','Katana Boost','Red Fuzz','Touch Wah'],
+        'AMP': ['Jazz Clean','Class A35','Class A30','Bassmate','Tweedy','Hiwire','Plexi 300','Plexi 45','Brit 800','1987x50','Slo 100','Fireman HBE','Brit 2000','Die Vh4','Uber','Dual Rect','Super Rvb','Twin Rvb','Deluxe Rvb','Cali crunch','Brit Blues','Match','MrZ 38','Vibro King','Budda'],
+        'IR':  ['A212','JZ120','BS410','GB412','TR212','DR112','V412','MD421','S57','R121','U87','C414','DB810','SV810','SV212','Martin D45','Gibson Hummingbird','Gibson J-15'],
+        'MOD': ['CE-1','CE-2','ST. Chorus','Vibrator','Detune','Flanger','Phase 90','Phase 100','S.C.F.','U-Vibe','Tremolo','Rotary','Harmonist'],
+        'DLY': ['Analog','Digital','Modulation','Tape','Reverse','Pan','Duotime','Phi'],
+        'RVB': ['Room','Hall','Plate','Spring','Shimmer'],
+        'EQ':  ['6-Band','Align','10-Band','Para'],
+        'GATE':['Noise Reduction']
+    };
+
     const BLOCKS = {
-        'WAH': { cc:89, sel:1,  start:10, b_offset: 72 }, 
-        'CMP': { cc:14, sel:2,  start:15, b_offset: 20 },
-        'GATE':{ cc:39, sel:3,  start:40, b_offset: 60 },
-        'EFX': { cc:19, sel:4,  start:20, b_offset: 24 },
-        'AMP': { cc:29, sel:5,  start:30, b_offset: 32 }, 
-        'EQ':  { cc:44, sel:6,  start:45, b_offset: 40 },
-        'MOD': { cc:59, sel:7,  start:60, b_offset: 48 }, 
-        'DLY': { cc:69, sel:8,  start:70, b_offset: 56 },
-        'RVB': { cc:79, sel:9,  start:80, b_offset: 64 }, 
-        'IR':  { cc:9,  sel:10, start:90, b_offset: 12 }  
+        'WAH':{cc:89,sel:1,start:10,b:72}, 'CMP':{cc:14,sel:2,start:15,b:20}, 'GATE':{cc:39,sel:3,start:40,b:60},
+        'EFX':{cc:19,sel:4,start:20,b:24}, 'AMP':{cc:29,sel:5,start:30,b:32}, 'IR':{cc:9,sel:10,start:90,b:12},
+        'EQ':{cc:44,sel:6,start:45,b:40}, 'MOD':{cc:59,sel:7,start:60,b:48}, 'DLY':{cc:69,sel:8,start:70,b:56}, 'RVB':{cc:79,sel:9,start:80,b:64}
     };
 
-    const DB = {
-        'WAH': { models:{'Clyde':['POS','MIN','MAX'], 'Cry BB':['POS','MIN','MAX'], 'V847':['POS','MIN','MAX'], 'Horse Wah':['POS','MIN','MAX'] }},
-        'CMP': { models:{'Rose':['SUS','LVL'], 'K Comp':['SUS','LVL','CLIP'], 'Studio Comp':['THR','RAT','GN','ATK'] }},
-        'GATE':{ models:{'Noise Reduction':['THR','DEC'] }},
-        'EFX': { models:{'Dist+':['DST','OUT'], 'RC Boost':['GN','VOL','BAS','TRB'], 'AC Boost':['GN','VOL','BAS','TRB'], 'Dist One':['DST','TON','LVL'], 'T Scream':['DRV','TON','LVL'], 'Blues Drv':['GN','TON','LVL'], 'Morning Drv':['VOL','DRV','TON'], 'EAT':['DRV','TON','LVL'], 'Red Dirt':['DRV','TON','LVL'], 'Crunch':['GN','TON','VOL','PRES'], 'Muff Fuzz':['SUS','TON','VOL'], 'Katana Boost':['BST','VOL'], 'Red Fuzz':['FUZZ','VOL'], 'Touch Wah':['SENS','Q','DEC'] }},
-        'AMP': { models:{'Jazz Clean':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Class A35':['GN','MST','BAS','MID','TRB','CUT','LVL'], 'Class A30':['GN','MST','BAS','MID','TRB','CUT','LVL'], 'Bassmate':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Tweedy':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Hiwire':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Plexi 45':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Brit 800':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Slo 100':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Fireman':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Dual Rect':['GN','MST','BAS','MID','TRB','PRS','LVL'], 'Twin Rvb':['GN','MST','BAS','MID','TRB','PRS','LVL'] }},
-        'EQ':  { models:{'6-Band':['100','200','400','800','1.6k','3.2k'], 'Align':['GN','L-CUT','H-CUT'], '10-Band':['31','62','125','250','500','1k','2k','4k','8k','16k'] }},
-        'MOD': { models:{'CE-1':['CHO','VIB'], 'CE-2':['RT','DP'], 'ST. Chorus':['RT','DP','MIX'], 'Flanger':['RT','DP','FDB','MIX'], 'Phase 90':['SPD'], 'U-Vibe':['SPD','INT','VOL'], 'Tremolo':['RT','DP','WAV'], 'Rotary':['SPD','BAL','DRV'] }},
-        'DLY': { models:{'Analog':['TM','FDB','MIX'], 'Digital':['TM','FDB','MIX'], 'Modulation':['TM','FDB','MIX'], 'Tape':['TM','FDB','MIX'], 'Reverse':['TM','FDB','MIX'], 'Duotime':['TM1','TM2','FDB','MIX'] }},
-        'RVB': { models:{'Room':['DEC','MIX','TON'], 'Hall':['DEC','MIX','TON'], 'Plate':['DEC','MIX','TON'], 'Spring':['DEC','MIX','TON'], 'Shimmer':['DEC','MIX','TON'] }},
-        'IR':  { models:{'Cab':['LO','HI','LVL'] }}
+    const PARAMS = {
+        'AMP': ['Gain','Master','Bass','Middle','Treble','Presence'],
+        'EFX': ['Drive','Tone','Level','Bass','Treble','Gain'],
+        'DLY': ['Time','Feedback','Mix','Mod','Filter','Rate']
     };
 
-    let midiOut = null;
-    let currentPatchID = 0;
-    let currentEditBlock = 'AMP';
-    let stateBypass = {}; 
-    let stateKnobs = {}; 
-    let stateModels = {}; 
+    let midiOut = null, currentPatchID = 0, currentEditBlock = 'AMP', stateBypass = {}, stateKnobs = {};
 
-    // CORE MIDI LOGIC
     async function startMidi() {
-        if (!navigator.requestMIDIAccess) return alert("WebMIDI not supported. Use Chrome.");
-        try {
-            const access = await navigator.requestMIDIAccess({ sysex: true });
-            const outputs = Array.from(access.outputs.values());
-            midiOut = outputs.find(o => o.name.toUpperCase().includes("NUX") || o.name.toUpperCase().includes("MG")) || outputs[0];
-            
-            if(midiOut) {
-                document.getElementById('connStatus').className = 'status-light connected';
-                document.getElementById('statText').innerText = "CONNECTED: MG-30";
-                document.getElementById('btnPrev').disabled = false;
-                document.getElementById('btnNext').disabled = false;
-                
-                const inputs = Array.from(access.inputs.values());
-                const inp = inputs.find(i => i.name.toUpperCase().includes("NUX") || i.name.toUpperCase().includes("MG")) || inputs[0];
-                if(inp) inp.onmidimessage = onMidiMsg;
-                
-                requestSync();
-            } else { alert("No MG-30 found. Check USB connection."); }
-        } catch(e) { alert("MIDI Permission denied."); }
-    }
-
-    function requestSync() {
-        if(!midiOut) return;
-        // MG-30 Identity & Bulk Dump Request
-        midiOut.send([0xF0, 0x7E, 0x00, 0x06, 0x01, 0xF7]); // Identity
-        setTimeout(() => {
-            midiOut.send([0xF0, 0x00, 0x01, 0x4F, 0x11, 0x01, 0x00, 0x00, 0xF7]); // Current Buffer Request
-        }, 150);
-    }
-
-    function onMidiMsg(e) {
-        const [status, d1, d2] = e.data;
-        
-        // Visual RX feedback
-        const light = document.getElementById('connStatus');
-        light.classList.add('rx'); setTimeout(() => light.classList.remove('rx'), 40);
-
-        if ((status & 0xF0) === 0xB0) { // CC Message
-            stateKnobs[d1] = d2;
-            updateKnobVisual(d1, d2);
-        } else if ((status & 0xF0) === 0xC0) { // PC Message
-            currentPatchID = d1;
-            renderPatchNum();
+        if (!navigator.requestMIDIAccess) return alert("WebMIDI not supported");
+        const access = await navigator.requestMIDIAccess({ sysex: true });
+        midiOut = Array.from(access.outputs.values()).find(o => o.name.toUpperCase().includes("MG"));
+        if(midiOut) {
+            document.getElementById('connStatus').style.background = '#00E676';
+            const inp = Array.from(access.inputs.values()).find(i => i.name.toUpperCase().includes("MG"));
+            if(inp) inp.onmidimessage = (e) => { if(e.data[0] === 0xF0) parseSysex(e.data); };
             requestSync();
-        } else if (status === 0xF0) { // SysEx Message
-            parseSysex(e.data);
         }
     }
+
+    function requestSync() { if(midiOut) midiOut.send([0xF0, 0x00, 0x01, 0x4F, 0x11, 0x01, 0x00, 0x00, 0xF7]); }
 
     function parseSysex(raw) {
-        // Parse Patch Name (MG-30 specific offset)
-        let name = "";
-        for (let i = 12; i < 28; i++) {
-            if (raw[i] > 31 && raw[i] < 127) name += String.fromCharCode(raw[i]);
+        let name = ""; for(let i=12; i<28; i++) if(raw[i]>31 && raw[i]<127) name += String.fromCharCode(raw[i]);
+        if(name.trim()) { 
+            document.getElementById('pName').innerText = name; 
+            document.getElementById('livePName').innerText = name; 
         }
-        if (name.trim()) document.getElementById('pName').innerText = name;
-
-        // Map Bulk Data to Blocks
         Object.keys(BLOCKS).forEach(key => {
-            const blk = BLOCKS[key];
-            const offset = blk.b_offset;
-            if(raw[offset] !== undefined) {
-                stateBypass[key] = raw[offset + 1] > 0;
-                // Capture knob values from dump
-                for(let p=0; p<8; p++) {
-                    if(raw[offset+2+p] !== undefined) stateKnobs[blk.start+p] = raw[offset+2+p];
-                }
-            }
+            const b = BLOCKS[key];
+            stateBypass[key] = raw[b.b + 1] > 0;
+            for(let p=0; p<8; p++) if(raw[b.b+2+p] !== undefined) stateKnobs[b.start+p] = raw[b.b+2+p];
         });
-        renderChain();
-        renderKnobs();
-    }
-
-    // UI RENDERING
-    function renderPatchNum() {
-        const bank = Math.floor(currentPatchID / 4) + 1;
-        const sub = ['A','B','C','D'][currentPatchID % 4];
-        document.getElementById('pNum').innerText = (bank < 10 ? '0' : '') + bank + sub;
-    }
-
-    function changePatch(dir) {
-        currentPatchID = Math.max(0, Math.min(127, currentPatchID + dir));
-        if(midiOut) midiOut.send([0xC0, currentPatchID]);
-        renderPatchNum();
+        renderChain(); renderKnobs(); renderPatchNum(); updateLiveUI();
     }
 
     function renderChain() {
-        const container = document.getElementById('chainUI');
-        container.innerHTML = '';
-        CHAIN_ORDER.forEach(id => {
+        const c = document.getElementById('chainUI'); c.innerHTML = '';
+        Object.keys(BLOCKS).forEach(id => {
             const el = document.createElement('div');
-            const isOn = stateBypass[id] !== false;
-            const isSel = currentEditBlock === id;
-            el.className = `pedal-block ${isOn ? 'on' : 'off'} ${isSel ? 'selected' : ''}`;
+            el.className = `pedal-block ${stateBypass[id] ? 'on' : 'off'} ${currentEditBlock === id ? 'selected' : ''}`;
             el.innerText = id;
             el.onclick = () => {
-                if(currentEditBlock === id) {
-                    stateBypass[id] = !isOn;
-                    if(midiOut) midiOut.send([0xB0, BLOCKS[id].cc, stateBypass[id] ? 127 : 0]);
-                } else {
-                    currentEditBlock = id;
-                    if(midiOut) midiOut.send([0xB0, 49, BLOCKS[id].sel]);
-                }
-                renderChain(); renderKnobs();
+                if(currentEditBlock === id) toggleBlock(id);
+                else { currentEditBlock = id; sendCC(49, BLOCKS[id].sel); renderChain(); renderKnobs(); }
             };
-            container.appendChild(el);
+            c.appendChild(el);
+        });
+    }
+
+    function toggleBlock(id) {
+        stateBypass[id] = !stateBypass[id];
+        sendCC(BLOCKS[id].cc, stateBypass[id] ? 127 : 0);
+        renderChain(); updateLiveUI();
+    }
+
+    function updateLiveUI() {
+        ['EFX','MOD','DLY'].forEach(id => {
+            const btn = document.getElementById('live-'+id);
+            const lbl = document.getElementById('lbl-'+id);
+            if(btn && lbl) {
+                btn.classList.toggle('active', stateBypass[id]);
+                lbl.innerText = stateBypass[id] ? 'ACTIVE' : 'BYPASS';
+            }
         });
     }
 
     function renderKnobs() {
-        const container = document.getElementById('knobUI');
-        const selector = document.getElementById('modelSel');
-        container.innerHTML = ''; selector.innerHTML = '';
+        const c = document.getElementById('knobUI'), s = document.getElementById('modelSel');
+        c.innerHTML = ''; s.innerHTML = '';
+        MODELS[currentEditBlock].forEach(m => s.appendChild(new Option(m,m)));
         
-        const models = Object.keys(DB[currentEditBlock].models);
-        models.forEach(m => selector.appendChild(new Option(m, m)));
-        
-        let curModel = stateModels[currentEditBlock] || models[0];
-        selector.value = curModel;
+        const labels = PARAMS[currentEditBlock] || ['Param 1','Param 2','Param 3','Param 4','Param 5','Param 6'];
 
-        DB[currentEditBlock].models[curModel].forEach((param, idx) => {
-            const cc = BLOCKS[currentEditBlock].start + idx;
+        for(let i=0; i<6; i++) {
+            const cc = BLOCKS[currentEditBlock].start + i;
             const val = stateKnobs[cc] || 64;
-            const group = document.createElement('div');
-            group.className = 'knob-group';
-            group.innerHTML = `
-                <svg class="knob-svg" viewBox="0 0 100 100" onpointerdown="startKnobDrag(event, ${cc})">
-                    <circle class="knob-bg" cx="50" cy="50" r="42"/>
-                    <path id="arc-${cc}" class="knob-path" d="M 25 80 A 40 40 0 1 1 75 80" 
-                          stroke-dasharray="210" stroke-dashoffset="${210 - (val * 1.65)}"/>
-                    <circle id="dot-${cc}" cx="50" cy="50" r="4" fill="#fff"
+            const g = document.createElement('div'); g.className = 'knob-group';
+            g.innerHTML = `<svg class="knob-svg" viewBox="0 0 100 100" onpointerdown="startDrag(event, ${cc})">
+                <circle cx="50" cy="50" r="42" fill="#000" stroke="#333" stroke-width="2"/>
+                <path id="arc-${cc}" class="knob-path" d="M 25 80 A 38 38 0 1 1 75 80" stroke-dasharray="195" stroke-dashoffset="${195-(val*1.5)}"/>
+            </svg><div class="knob-val-text" id="txt-${cc}">${val}</div><div class="knob-label">${labels[i]}</div>`;
+            c.appendChild(g);
+        }
+    }
+
+    function startDrag(e, cc) {
+        const sY = e.clientY, sV = stateKnobs[cc] || 64;
+        const move = (m) => {
+            let nV = Math.max(0, Math.min(127, sV + Math.floor((sY - m.clientY)/1.5)));
+            stateKnobs[cc] = nV; 
+            document.getElementById(`arc-${cc}`).style.strokeDashoffset = 195-(nV*1.5);
+            document.getElementById(`txt-${cc}`).innerText = nV;
+            sendCC(cc, nV);
+        };
+        const stop = () => { window.removeEventListener('mousemove', move); };
+        window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
+    }
+
+    function sendCC(cc, v) { if(midiOut) midiOut.send([0xB0, cc, v]); }
+    function changePatch(d) { currentPatchID = Math.max(0, Math.min(127, currentPatchID+d)); if(midiOut) midiOut.send([0xC0, currentPatchID]); renderPatchNum(); }
+    function renderPatchNum() { 
+        const b = Math.floor(currentPatchID/4)+1, s = ['A','B','C','D'][currentPatchID%4]; 
+        const res = (b<10?'0':'')+b+s;
+        document.getElementById('pNum').innerText = res; 
+        document.getElementById('livePNum').innerText = res;
+    }
+    function switchTab(t) { 
+        document.getElementById('editView').style.display = t==='edit'?'block':'none'; 
+        document.getElementById('liveView').style.display = t==='live'?'flex':'none'; 
+        document.getElementById('tab-edit').classList.toggle('active', t==='edit');
+        document.getElementById('tab-live').classList.toggle('active', t==='live');
+    }
+    
+    renderChain(); renderPatchNum();
+</script>
+</body>
+</html>
