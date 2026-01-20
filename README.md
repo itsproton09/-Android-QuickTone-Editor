@@ -2,197 +2,171 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MG-30 MASTER SYNC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MG-30 LIVE SYNC</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
-        :root { --bg:#050505; --gold:#D4AF37; --text:#e0e0e0; --on:#00E676; --off:#FF1744; --panel:#121212; --border:#333; }
-        * { box-sizing:border-box; user-select:none; touch-action:none; }
-        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-        
-        header { height:60px; background:#000; border-bottom:2px solid var(--gold); display:flex; justify-content:space-between; align-items:center; padding:0 20px; }
-        .tab-btn { padding:10px 15px; border:none; background:#181818; color:#888; font-weight:800; cursor:pointer; font-size:10px; border-radius:5px; text-transform:uppercase; margin-left:5px; }
-        .tab-btn.active { background:var(--gold); color:#000; }
-        
-        /* THE VISUAL SIGNAL CHAIN */
-        .chain-container { height:100px; width:100%; background:#000; display:flex; align-items:center; gap:10px; padding:0 20px; overflow-x:auto; border-bottom:1px solid #222; }
-        .pedal-block { min-width:85px; height:65px; background:#111; border:3px solid #333; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center; font-size:11px; font-weight:900; color:#555; transition: all 0.15s ease; }
-        
-        /* GREEN FOR ON / RED FOR OFF */
-        .pedal-block.on { border-color:var(--on); color:#fff; box-shadow: 0 0 15px rgba(0,230,118,0.25); }
-        .pedal-block.off { border-color:var(--off); color:#fff; box-shadow: 0 0 10px rgba(255,23,68,0.15); }
-        
-        .pedal-block.selected { background:#252525; border-style: double; transform:scale(1.05); }
-        .status-light { width:10px; height:10px; border-radius:50%; margin-bottom:6px; background:#333; }
-        .on .status-light { background:var(--on); box-shadow: 0 0 10px var(--on); }
-        .off .status-light { background:var(--off); box-shadow: 0 0 8px var(--off); }
+        :root { --gold: #D4AF37; --bg: #000; --active: #00E676; --panel: #111; --red: #ff3d00; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        .stage { flex:1; padding:20px; display:flex; flex-direction:column; align-items:center; overflow-y:auto; }
-        .pedal-chassis { width:100%; max-width:1000px; background:var(--panel); border-radius:20px; padding:30px; display:flex; flex-wrap:wrap; justify-content:center; gap:25px; border:1px solid #222; }
-        
-        /* UI BUTTONS */
-        footer { height:85px; background:#000; border-top:1px solid #222; display:flex; gap:12px; padding:0 20px; align-items:center; justify-content:center; }
-        .btn-action { flex:1; height:50px; background:#111; border:2px solid #333; color:#fff; font-size:11px; font-weight:900; border-radius:10px; text-transform:uppercase; cursor:pointer; }
-        .btn-action:active { background:var(--gold); color:#000; }
-        #debug-log { height:45px; background:#000; color:var(--on); font-family:'JetBrains Mono'; font-size:11px; padding:12px; border-top:1px solid #222; overflow:hidden; }
+        /* Patch Display Area */
+        .patch-header { padding: 20px; background: #000; border-bottom: 2px solid var(--gold); text-align: center; }
+        .lcd-screen { background: #050505; border: 1px solid #333; border-radius: 12px; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: inset 0 0 15px rgba(212,175,55,0.1); }
+        .p-num { font-size: 3rem; font-weight: 900; color: var(--gold); font-family: 'Courier New', monospace; line-height: 1; }
+        .p-name { font-size: 1.2rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; text-align: right; }
+
+        /* Signal Chain Grid */
+        .chain-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 12px; background: #080808; }
+        .block { height: 45px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: #555; transition: 0.2s; }
+        .block.on { border-color: var(--active); color: #fff; background: #0e1d0e; box-shadow: 0 0 8px rgba(0, 230, 118, 0.3); }
+        .block.selected { border-color: var(--gold); color: var(--gold); }
+
+        /* Parameter Sliders */
+        .param-scroller { flex: 1; overflow-y: auto; padding: 15px; background: #000; }
+        .slider-card { background: var(--panel); padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #222; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-bottom: 8px; font-weight: bold; }
+        input[type=range] { width: 100%; height: 35px; accent-color: var(--gold); }
+
+        /* Global Footer Controls */
+        footer { padding: 10px; background: #000; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; border-top: 1px solid #222; }
+        .btn { padding: 15px 5px; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; font-size: 10px; font-weight: bold; text-align: center; }
+        .btn-link { background: var(--gold); color: #000; border: none; }
+        .btn-tuner { border-color: var(--red); color: var(--red); }
     </style>
 </head>
 <body>
 
-<header>
-    <div style="font-weight:900; font-size:18px;">MG-30 <span style="color:var(--gold)">V5 CORE</span></div>
-    <div>
-        <button class="tab-btn active" id="t-edit" onclick="switchTab('edit')">Tone</button>
-        <button class="tab-btn" id="t-global" onclick="switchTab('global')">Global</button>
+<div class="patch-header">
+    <div class="lcd-screen">
+        <div class="p-num" id="ui-num">--</div>
+        <div class="p-name" id="ui-name">NOT LINKED</div>
     </div>
-</header>
-
-<div id="editView">
-    <div class="chain-container" id="chainUI"></div>
-    <div class="stage">
-        <select id="modelSel" style="margin-bottom:20px; background:#000; color:var(--gold); border:2px solid #444; padding:15px; width:100%; max-width:450px; border-radius:8px; font-size:16px; font-weight:700;" onchange="userSelectModel()"></select>
-        <div class="pedal-chassis" id="knobUI"></div>
+    <div style="margin-top:15px; display:flex; align-items:center; gap:10px;">
+        <span style="font-size:10px; color:var(--gold); font-weight:bold;">MASTER</span>
+        <input type="range" min="0" max="127" oninput="sendCC(7, this.value)">
     </div>
 </div>
 
-<div id="globalView" style="display:none;" class="stage">
-    <div class="pedal-chassis" id="globalKnobUI"></div>
-</div>
+<div class="chain-grid" id="ui-chain"></div>
 
-<div id="debug-log">Ready. Connect MG-30 and tap LINK.</div>
+<div class="param-scroller" id="ui-params">
+    <div style="text-align:center; color:#333; margin-top:50px;">Connect Nux MG-30 via OTG</div>
+</div>
 
 <footer>
-    <button class="btn-action" style="border-color:var(--on); color:var(--on);" onclick="initMidi()">LINK HARDWARE</button>
-    <button class="btn-action" onclick="changePatch(-1)">PREV</button>
-    <button class="btn-action" onclick="changePatch(1)">NEXT</button>
-    <button class="btn-action" onclick="requestSync()">SYNC</button>
+    <button class="btn btn-link" onclick="initMidi()">LINK</button>
+    <button class="btn btn-tuner" onclick="toggleTuner()">TUNER</button>
+    <button class="btn" onclick="changePC(-1)">PREV</button>
+    <button class="btn" onclick="changePC(1)">NEXT</button>
 </footer>
 
 <script>
-    const log = (m) => document.getElementById('debug-log').innerText = "LOG: " + m;
-    let midiOut = null, midiIn = null, stateBypass = {}, stateKnobs = {};
-
+    let mOut, mIn, pId = 0, activeBlock = 'AMP', tunerActive = false;
+    
+    // MG-30 Map (V5)
     const BLOCKS = {
-        'WAH': {cc:89, sel:1, start:10, b:72}, 'CMP': {cc:14, sel:2, start:15, b:20}, 'GATE':{cc:39, sel:3, start:40, b:60},
-        'EFX': {cc:19, sel:4, start:20, b:24}, 'AMP': {cc:29, sel:5, start:30, b:32}, 'IR':  {cc:9,  sel:10,start:90, b:12},
-        'EQ':  {cc:44, sel:6, start:45, b:40}, 'MOD': {cc:59, sel:7, start:60, b:48}, 'DLY': {cc:69, sel:8, start:70, b:56}, 'RVB': {cc:79, sel:9, start:80, b:64}
+        'WAH':  {cc:89, id:1, s:10, p:['Position','Mix','Volume']},
+        'CMP':  {cc:14, id:2, s:15, p:['Sustain','Level','Clip']},
+        'GATE': {cc:39, id:3, s:40, p:['Thresh','Range','Release']},
+        'EFX':  {cc:19, id:4, s:20, p:['Gain','Level','Tone','Bass']},
+        'AMP':  {cc:29, id:5, s:30, p:['Gain','Master','Bass','Mid','Treble','Pres']},
+        'EQ':   {cc:44, id:6, s:45, p:['100Hz','400Hz','1.6k','3.2k']},
+        'MOD':  {cc:59, id:7, s:60, p:['Rate','Depth','Mix','Tone']},
+        'DLY':  {cc:69, id:8, s:70, p:['Time','Repeat','Mix','Mod']},
+        'RVB':  {cc:79, id:9, s:80, p:['Decay','Mix','Tone','Damp']},
+        'IR':   {cc:9,  id:10,s:90, p:['Level','H-Cut','L-Cut']}
     };
 
-    const GLOBAL_CC = { 'Low Cut': 100, 'Bass': 101, 'Mid': 102, 'High': 103, 'High Cut': 104, 'Output': 105 };
+    let states = { bypass: {}, vals: {} };
 
     async function initMidi() {
         try {
             const access = await navigator.requestMIDIAccess({ sysex: true });
-            midiOut = Array.from(access.outputs.values()).find(o => o.name.includes("MG-30"));
-            midiIn = Array.from(access.inputs.values()).find(i => i.name.includes("MG-30"));
+            mOut = Array.from(access.outputs.values()).find(o => /MG-30|NUX/i.test(o.name));
+            mIn = Array.from(access.inputs.values()).find(i => i.name === mOut?.name);
             
-            if(midiOut && midiIn) {
-                midiIn.onmidimessage = (e) => { if(e.data[0] === 0xF0) parseSysex(e.data); };
-                requestSync();
-                log("CONNECTED: " + midiOut.name);
-            } else {
-                log("DEVICE NOT FOUND. CHECK OTG.");
+            if (mOut && mIn) {
+                mIn.onmidimessage = handleSysex;
+                requestDump(); // Immediate sync on connect
+            } else { alert("Device not found. Use Chrome on Android/PC with OTG."); }
+        } catch(e) { alert("MIDI Access Denied."); }
+    }
+
+    function handleSysex(msg) {
+        const d = msg.data;
+        // Check for MG-30 Identity Header
+        if (d[0] === 0xF0 && d[3] === 0x4F) {
+            // Extract Patch Number (0-based)
+            pId = d[12];
+            document.getElementById('ui-num').innerText = pId.toString().padStart(2, '0');
+
+            // Extract Name (V5 offsets name starting at byte 14)
+            let name = "";
+            for (let i = 14; i < 26; i++) {
+                if (d[i] > 31) name += String.fromCharCode(d[i]);
             }
-        } catch(e) { log("MIDI PERMISSION DENIED."); }
-    }
-
-    function requestSync() { 
-        if(midiOut) midiOut.send([0xF0, 0x00, 0x01, 0x4F, 0x11, 0x01, 0x00, 0x00, 0xF7]); 
-    }
-
-    function parseSysex(raw) {
-        Object.keys(BLOCKS).forEach(key => {
-            const b = BLOCKS[key];
-            stateBypass[key] = raw[b.b + 1] > 0;
-            for(let p=0; p<6; p++) stateKnobs[b.start+p] = raw[b.b+2+p];
-        });
-        renderChain(); renderKnobs(); renderGlobal();
-    }
-
-    // THE RELIABLE TOGGLE FUNCTION
-    async function toggleBlock(id) {
-        stateBypass[id] = !stateBypass[id];
-        const val = stateBypass[id] ? 127 : 0;
-
-        // Step 1: Select/Focus the block (CC 49)
-        sendCC(49, BLOCKS[id].sel);
-        
-        // Step 2: Tiny wait for hardware to "Listen"
-        await new Promise(r => setTimeout(r, 35));
-        
-        // Step 3: Send Bypass/Engage (CC)
-        sendCC(BLOCKS[id].cc, val);
-        
-        log(`${id} set to ${stateBypass[id] ? 'ON' : 'OFF'}`);
-        renderChain(); // Refresh lights
-    }
-
-    function renderChain() {
-        const c = document.getElementById('chainUI'); c.innerHTML = '';
-        Object.keys(BLOCKS).forEach(id => {
-            const el = document.createElement('div');
-            const isOn = stateBypass[id];
-            el.className = `pedal-block ${isOn ? 'on' : 'off'} ${currentEditBlock === id ? 'selected' : ''}`;
-            el.innerHTML = `<div class="status-light"></div><div>${id}</div>`;
-            el.onclick = () => {
-                if(currentEditBlock === id) toggleBlock(id);
-                else { 
-                    currentEditBlock = id; 
-                    sendCC(49, BLOCKS[id].sel); 
-                    renderChain(); 
-                    renderKnobs(); 
-                }
-            };
-            c.appendChild(el);
-        });
-    }
-
-    function renderKnobs() {
-        const c = document.getElementById('knobUI'); c.innerHTML = '';
-        for(let i=0; i<6; i++) {
-            const cc = BLOCKS[currentEditBlock].start + i;
-            createKnob(c, cc, stateKnobs[cc] || 64, `Param ${i+1}`);
+            document.getElementById('ui-name').innerText = name.trim() || "NEW PRESET";
+            
+            // Map Bypass states from the Sysex Buffer
+            Object.keys(BLOCKS).forEach(key => {
+                const offset = 32 + (BLOCKS[key].id * 2); 
+                states.bypass[key] = d[offset] > 0;
+            });
+            
+            render();
         }
     }
 
-    function renderGlobal() {
-        const c = document.getElementById('globalKnobUI'); c.innerHTML = '';
-        Object.entries(GLOBAL_CC).forEach(([name, cc]) => createKnob(c, cc, 64, name));
+    function render() {
+        const chain = document.getElementById('ui-chain');
+        chain.innerHTML = '';
+        Object.keys(BLOCKS).forEach(key => {
+            const div = document.createElement('div');
+            div.className = `block ${states.bypass[key] ? 'on' : ''} ${activeBlock === key ? 'selected' : ''}`;
+            div.innerText = key;
+            div.onclick = () => {
+                if(activeBlock === key) {
+                    states.bypass[key] = !states.bypass[key];
+                    sendCC(49, BLOCKS[key].id); // MUST FOCUS FIRST
+                    sendCC(BLOCKS[key].cc, states.bypass[key] ? 127 : 0);
+                }
+                activeBlock = key;
+                sendCC(49, BLOCKS[key].id); // Update Focus
+                render();
+            };
+            chain.appendChild(div);
+        });
+
+        const params = document.getElementById('ui-params');
+        params.innerHTML = `<div style="font-size:10px; color:var(--gold); margin-bottom:10px; font-weight:bold;">${activeBlock} PARAMETERS</div>`;
+        BLOCKS[activeBlock].p.forEach((label, i) => {
+            const cc = BLOCKS[activeBlock].s + i;
+            const card = document.createElement('div');
+            card.className = 'slider-card';
+            card.innerHTML = `
+                <div class="slider-header"><span>${label}</span><span id="v-${cc}">64</span></div>
+                <input type="range" min="0" max="127" oninput="updateVal(${cc}, this.value)">
+            `;
+            params.appendChild(card);
+        });
     }
 
-    function createKnob(container, cc, val, label) {
-        const g = document.createElement('div'); g.className = 'knob-group';
-        g.style.textAlign = 'center';
-        g.innerHTML = `<svg width="70" height="70" viewBox="0 0 100 100" onpointerdown="startDrag(event, ${cc})">
-            <circle cx="50" cy="50" r="40" fill="#000" stroke="#222" stroke-width="3"/>
-            <path id="arc-${cc}" d="M 25 80 A 35 35 0 1 1 75 80" fill="none" stroke="${stateKnobs[cc] ? '#D4AF37' : '#555'}" stroke-width="8" stroke-dasharray="180" stroke-dashoffset="${180-(val*1.4)}"/>
-        </svg><div style="font-size:14px; margin-top:5px;" id="txt-${cc}">${val}</div><div style="font-size:9px; color:#666; text-transform:uppercase;">${label}</div>`;
-        container.appendChild(g);
+    function updateVal(cc, v) {
+        document.getElementById(`v-${cc}`).innerText = v;
+        sendCC(cc, v);
     }
 
-    function sendCC(cc, v) { if(midiOut) midiOut.send([0xB0, cc, v]); }
-
-    function startDrag(e, cc) {
-        const sY = e.clientY || e.touches[0].clientY;
-        const sV = stateKnobs[cc] || 64;
-        const move = (m) => {
-            const mY = m.clientY || (m.touches ? m.touches[0].clientY : 0);
-            let nV = Math.max(0, Math.min(127, sV + Math.floor((sY - mY)/1.2)));
-            stateKnobs[cc] = nV;
-            document.getElementById(`arc-${cc}`).style.strokeDashoffset = 180-(nV*1.4);
-            document.getElementById(`txt-${cc}`).innerText = nV;
-            sendCC(cc, nV);
-        };
-        const stop = () => { window.removeEventListener('mousemove', move); window.removeEventListener('touchmove', move); };
-        window.addEventListener('mousemove', move); window.addEventListener('touchmove', move, {passive:false});
-        window.addEventListener('mouseup', stop); window.addEventListener('touchend', stop);
+    function toggleTuner() {
+        tunerActive = !tunerActive;
+        sendCC(74, tunerActive ? 127 : 0);
     }
 
-    function switchTab(t) {
-        document.getElementById('editView').style.display = t==='edit'?'block':'none';
-        document.getElementById('globalView').style.display = t==='global'?'block':'none';
-        document.getElementById('t-edit').className = 'tab-btn' + (t==='edit'?' active':'');
-        document.getElementById('t-global').className = 'tab-btn' + (t==='global'?' active':'');
+    function sendCC(c, v) { if(mOut) mOut.send([0xB0, c, v]); }
+    function requestDump() { if(mOut) mOut.send([0xF0, 0x00, 0x01, 0x4F, 0x11, 0x01, 0x00, 0x00, 0xF7]); }
+    function changePC(dir) { 
+        pId = Math.max(0, Math.min(127, pId + dir));
+        if(mOut) mOut.send([0xC0, pId]); 
+        setTimeout(requestDump, 150); // Small delay to let hardware change patch
     }
 </script>
 </body>
